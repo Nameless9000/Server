@@ -11,6 +11,7 @@ import MulterS3 from 'multer-s3';
 import UploadMiddleware from '../middlewares/UploadMiddleware';
 import Files from '../models/FileModel';
 import Users from '../models/UserModel';
+import DeletionMiddleware from '../middlewares/DeletionMiddleware';
 const router = Router();
 
 const upload: Multer = multer({
@@ -70,6 +71,48 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
                 success: true,
                 imageUrl: `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}/${file.filename}`,
                 deletionUrl: `${process.env.BACKEND_URL}/files/delete?key=${deletionKey}`,
+            });
+        }).catch((err) => {
+            res.status(500).json({
+                success: false,
+                error: err.message,
+            });
+        });
+});
+
+router.get('/delete', DeletionMiddleware, async (req: Request, res: Response) => {
+    const key = req.query.key as string;
+
+    if (!key) return res.status(400).json({
+        success: false,
+        error: 'Provide a deletion key.',
+    });
+
+    const file = await Files.findOne({ deletionKey: key });
+
+    if (!file) return res.status(404).json({
+        success: false,
+        error: 'Invalid deletion key.',
+    });
+
+    const user = await Users.findOne({ username: file.uploader.username });
+
+    if (!user) return res.status(404).json({
+        success: false,
+        error: 'The user attached to this file does not exist.',
+    });
+
+    const params = {
+        Bucket: process.env.S3_BUCKET,
+        Key: `${user._id}/${file.filename}`,
+    };
+
+    await s3.deleteObject(params).promise()
+        .then(async () => {
+            await file.remove();
+            res.status(200).json({
+                success: true,
+                message: 'Deleted file successfully.',
             });
         }).catch((err) => {
             res.status(500).json({
