@@ -3,6 +3,12 @@ import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
 @modelOptions({ options: { allowMixed: 0 } })
 export class User {
     /**
+     * The user's uid.
+     */
+    @prop()
+    _id: string;
+
+    /**
      * The user's username.
      */
     @prop()

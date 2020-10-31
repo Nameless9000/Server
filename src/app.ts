@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(json());
-app.use('/users', FilesRouter);
+app.use('/files', FilesRouter);
 
 app.listen(port, () => {
     console.log(`Listening to port ${port}`);

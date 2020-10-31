@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "typeRoots": [
+      "./typings",
+      "./node_modules/@types"
+    ],
     "module": "CommonJS",
     "target": "es2018",
     "outDir": "build",
@@ -20,7 +24,7 @@
     "esModuleInterop": true
   },
   "include": [
-    "src/**/*",
+    "src/**/*", "./typings"
   ],
   "exclude": [
     "node_modules"
