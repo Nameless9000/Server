@@ -110,6 +110,7 @@ export class User {
     @prop()
     settings: {
         showLink: boolean;
+        invisibleUrl: boolean;
         domain: {
             name: string;
             subdomain: string;
