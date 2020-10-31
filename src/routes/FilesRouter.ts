@@ -1,17 +1,14 @@
 import { Request, Response, Router } from 'express';
-import {
-    generateFileName,
-    generateDeletionKey
-} from '../utils/GenerateUtil';
+import { generateString } from '../utils/GenerateUtil';
 import { logFile } from '../utils/LoggingUtil';
 import { extname } from 'path';
 import { s3 } from '../utils/S3Util';
+import UploadMiddleware from '../middlewares/UploadMiddleware';
+import DeletionMiddleware from '../middlewares/DeletionMiddleware';
 import multer, { Multer } from 'multer';
 import MulterS3 from 'multer-s3';
-import UploadMiddleware from '../middlewares/UploadMiddleware';
 import Files from '../models/FileModel';
 import Users from '../models/UserModel';
-import DeletionMiddleware from '../middlewares/DeletionMiddleware';
 const router = Router();
 
 const upload: Multer = multer({
@@ -22,7 +19,7 @@ const upload: Multer = multer({
         bucket: process.env.S3_BUCKET,
         key: (req: Request, file: Express.Multer.File, cb) => {
             if (req.user) {
-                const filename = generateFileName() + extname(file.originalname);
+                const filename = generateString(10) + extname(file.originalname);
                 file.filename = filename;
                 cb(null, `${req.user._id}/${filename}`);
             }
@@ -40,7 +37,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
 
     const { user } = req;
     const { embed } = user.settings;
-    const deletionKey = generateDeletionKey();
+    const deletionKey = generateString(40);
 
     const uploadedFile = await Files.create({
         filename: file.filename,
@@ -120,6 +117,21 @@ router.get('/delete', DeletionMiddleware, async (req: Request, res: Response) =>
                 error: err.message,
             });
         });
+});
+
+router.get('/count', async (req: Request, res: Response) => {
+    try {
+        const total = await Files.countDocuments();
+        res.status(200).json({
+            success: true,
+            total,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
 export default router;
