@@ -118,7 +118,7 @@ export class User {
             enabled: boolean;
             color: string;
             title: string;
-            text: string;
+            description: string;
         };
     };
 }

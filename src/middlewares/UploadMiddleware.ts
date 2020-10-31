@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import Users from '../models/user';
+import Users from '../models/UserModel';
 
 export default async (req: Request, res: Response, next: NextFunction) => {
     const key = req.headers.key as string;

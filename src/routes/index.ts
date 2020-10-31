@@ -1,4 +1,4 @@
-import FilesRouter from './files';
+import FilesRouter from './FileRoute';
 
 export {
     FilesRouter
