@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { generateString } from '../utils/GenerateUtil';
+import { generateShortUrl, generateString } from '../utils/GenerateUtil';
 import { logFile } from '../utils/LoggingUtil';
 import { extname } from 'path';
 import { s3 } from '../utils/S3Util';
@@ -9,6 +9,7 @@ import multer, { Multer } from 'multer';
 import MulterS3 from 'multer-s3';
 import Files from '../models/FileModel';
 import Users from '../models/UserModel';
+import ShortUrl from '../models/ShortUrlModel';
 const router = Router();
 
 const upload: Multer = multer({
@@ -35,9 +36,10 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         error: 'Provide a file.',
     });
 
+    const deletionKey = generateString(40);
     const { user } = req;
     const { embed } = user.settings;
-    const deletionKey = generateString(40);
+    const { domain } = user.settings;
 
     const uploadedFile = await Files.create({
         filename: file.filename,
@@ -62,11 +64,22 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
                 $inc: { uploads: +1 },
             });
 
-            const { domain } = user.settings;
+            const baseUrl = `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`;
+            let imageUrl = `${baseUrl}/${file.filename}`;
+
+            if (user.settings.invisibleUrl) {
+                const shortUrlId = generateShortUrl();
+                await ShortUrl.create({
+                    _id: shortUrlId,
+                    filename: file.filename,
+                    uid: user._id,
+                });
+                imageUrl = `${baseUrl}/${shortUrlId}`;
+            }
 
             res.status(200).json({
                 success: true,
-                imageUrl: `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}/${file.filename}`,
+                imageUrl,
                 deletionUrl: `${process.env.BACKEND_URL}/files/delete?key=${deletionKey}`,
             });
         }).catch((err) => {
