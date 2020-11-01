@@ -12,9 +12,16 @@ router.get('/count', async (req: Request, res: Response) => {
     try {
         const total = await Users.countDocuments();
         const blacklisted = await Users.countDocuments({ 'blacklisted.status': true });
-        res.json({ success: true, total, blacklisted });
+        res.status(200).json({
+            success: true,
+            total,
+            blacklisted,
+        });
     } catch (err) {
-        res.json({ success: false, error: err.message });
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
     }
 });
 
