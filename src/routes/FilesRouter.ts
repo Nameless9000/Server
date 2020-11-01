@@ -2,7 +2,7 @@ import { Request, Response, Router } from 'express';
 import { generateShortUrl, generateString } from '../utils/GenerateUtil';
 import { logFile } from '../utils/LoggingUtil';
 import { extname } from 'path';
-import { s3 } from '../utils/S3Util';
+import { s3, wipeFiles } from '../utils/S3Util';
 import UploadMiddleware from '../middlewares/UploadMiddleware';
 import DeletionMiddleware from '../middlewares/DeletionMiddleware';
 import multer, { Multer } from 'multer';
@@ -132,6 +132,50 @@ router.get('/delete', DeletionMiddleware, async (req: Request, res: Response) =>
         });
 });
 
+router.post('/wipe', async (req: Request, res: Response) => {
+    let { user } = req;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'Unauthorized.',
+    });
+
+    user = await Users.findOne({ _id: user._id });
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'Unauthorized.',
+    });
+
+    await wipeFiles(user)
+        .then(() => {
+            res.status(200).json({
+                success: true,
+                message: 'Wiped images successfully.',
+            });
+        }).catch((err) => {
+            res.status(500).json({
+                success: false,
+                error: err.message,
+            });
+        });
+});
+
+router.get('/count', async (req: Request, res: Response) => {
+    try {
+        const total = await Files.countDocuments();
+        res.status(200).json({
+            success: true,
+            total,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
 router.get('/config', async (req: Request, res: Response) => {
     const key = req.query.key as string;
 
@@ -163,21 +207,6 @@ router.get('/config', async (req: Request, res: Response) => {
 
     res.set('Content-Disposition', 'attachment; filename=config.sxcu');
     res.send(Buffer.from(JSON.stringify(config, null, 2), 'utf8'));
-});
-
-router.get('/count', async (req: Request, res: Response) => {
-    try {
-        const total = await Files.countDocuments();
-        res.status(200).json({
-            success: true,
-            total,
-        });
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            error: err.message,
-        });
-    }
 });
 
 export default router;

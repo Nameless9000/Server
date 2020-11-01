@@ -17,6 +17,15 @@ router.get('/count', async (req: Request, res: Response) => {
     }
 });
 
+router.get('/@me', (req: Request, res: Response) => {
+    req.user ?
+        res.status(200).json(req.user) :
+        res.status(401).json({
+            success: false,
+            error: 'Unauthorized.',
+        });
+});
+
 router.put('/testimonial', async (req: Request, res: Response) => {
     const { testimonial }: { testimonial: string } = req.body;
 
