@@ -132,6 +132,39 @@ router.get('/delete', DeletionMiddleware, async (req: Request, res: Response) =>
         });
 });
 
+router.get('/config', async (req: Request, res: Response) => {
+    const key = req.query.key as string;
+
+    if (!key) return res.status(400).json({
+        success: false,
+        error: 'Provide a key.',
+    });
+
+    const user = await Users.findOne({ key });
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'Unauthorized.',
+    });
+
+    const config = {
+        Name: 'astral.cool',
+        DestinationType: 'ImageUploader',
+        RequestType: 'POST',
+        RequestURL: `${process.env.BACKEND_URL}/files`,
+        FileFormName: 'file',
+        Body: 'MultipartFormData',
+        Headers: {
+            key,
+        },
+        URL: '$json:imageUrl$',
+        DeletionURL: '$json:deletionUrl$',
+    };
+
+    res.set('Content-Disposition', 'attachment; filename=config.sxcu');
+    res.send(Buffer.from(JSON.stringify(config, null, 2), 'utf8'));
+});
+
 router.get('/count', async (req: Request, res: Response) => {
     try {
         const total = await Files.countDocuments();

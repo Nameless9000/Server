@@ -17,7 +17,7 @@ function generateString(length: number): string {
  */
 function generateShortUrl(): string {
     let url = '';
-    const invisibleCharacters = ['\u200B', '\u2060', '\u180E', '\u200D', '\u200C'].join('');
+    const invisibleCharacters = ['\u200B', '\u180E', '\u2060', '\u200C', '\u200D'].join('');
     for (let i = 0; i < 25; i++) {
         url += invisibleCharacters.charAt(Math.floor(Math.random() * invisibleCharacters.length));
     }
