@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import {
-    FilesRouter
+    FilesRouter,
+    InvitesRouter
 } from './routes';
 import express, { json } from 'express';
 import { connect } from 'mongoose';
@@ -9,7 +10,9 @@ const port = process.env.PORT || 3000;
 
 app.disable('x-powered-by');
 app.use(json());
+
 app.use('/files', FilesRouter);
+app.use('/invites', InvitesRouter);
 
 app.listen(port, () => {
     console.log(`Listening to port ${port}`);

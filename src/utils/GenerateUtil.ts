@@ -24,7 +24,18 @@ function generateShortUrl(): string {
     return url;
 }
 
+/**
+ * Generate a invite code.
+ * @return {string} The invite code.
+ */
+function generateInvite(): string {
+    const key = randomBytes(80)
+        .toString('hex');
+    return [key.slice(0, 8), key.slice(1, 10), key.slice(3, 7)].join('-');
+}
+
 export {
     generateString,
-    generateShortUrl
+    generateShortUrl,
+    generateInvite
 };
