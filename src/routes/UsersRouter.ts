@@ -2,8 +2,9 @@ import { Request, Response, Router } from 'express';
 import Filter from 'bad-words';
 import Users from '../models/UserModel';
 import AdminMiddleware from '../middlewares/AdminMiddleware';
+import { s3 } from '../utils/S3Util';
 const filter = new Filter({
-    list: ['elerium', 'payshost', 'pxl.blue', 'wizardugc', 'pays.host', 'pxlblue'],
+    list: ['elerium', 'payshost', 'pxl.blue', 'prophecy.photos', 'pays.host', 'pxlblue', 'prophecy'],
 });
 const router = Router();
 
@@ -143,6 +144,71 @@ router.post('/:id/whitelist', AdminMiddleware, async (req: Request, res: Respons
             success: false,
             error: err.message,
         });
+    });
+});
+
+router.get('/:id/images', async (req: Request, res: Response) => {
+    let { user } = req;
+    const { id } = req.params;
+    const key = req.headers.authorization as string;
+
+    if (!key && !user || (key !== process.env.API_KEY)) return res.status(401).json({
+        success: false,
+        error: 'Unauthorized.',
+    });
+
+    if (!id) return res.status(400).json({
+        success: false,
+        error: 'Provide a id.',
+    });
+
+    user = await Users.findOne({ _id: id });
+
+    if (!user) return res.status(404).json({
+        success: false,
+        error: 'Invalid id.',
+    });
+
+    const params = {
+        Bucket: process.env.S3_BUCKET,
+        Prefix: `${user._id}/`,
+    };
+
+    const objects = await s3.listObjectsV2(params).promise();
+    const images = [];
+
+    for (const object of objects.Contents) {
+        images.push(`https://astral.cool/${object.Key.split('/')[1]}`);
+    }
+
+    res.status(200).json({
+        success: true,
+        images,
+    });
+});
+
+router.get('/:id', AdminMiddleware, async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (!id) return res.status(400).json({
+        success: false,
+        error: 'Provide a uid.',
+    });
+
+    let user = await Users.findOne({ _id: id });
+
+    if (!user) return res.status(404).json({
+        success: false,
+        error: 'Invalid user.',
+    });
+
+    user = user.toObject();
+    delete user.__v;
+    delete user.password;
+
+    res.status(200).json({
+        success: true,
+        user,
     });
 });
 
