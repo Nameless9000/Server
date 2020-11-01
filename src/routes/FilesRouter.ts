@@ -9,7 +9,7 @@ import multer, { Multer } from 'multer';
 import MulterS3 from 'multer-s3';
 import Files from '../models/FileModel';
 import Users from '../models/UserModel';
-import ShortUrl from '../models/ShortUrlModel';
+import InvisibleUrl from '../models/InvisibleUrlModel';
 const router = Router();
 
 const upload: Multer = multer({
@@ -69,7 +69,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
 
             if (user.settings.invisibleUrl) {
                 const shortUrlId = generateShortUrl();
-                await ShortUrl.create({
+                await InvisibleUrl.create({
                     _id: shortUrlId,
                     filename: file.filename,
                     uid: user._id,

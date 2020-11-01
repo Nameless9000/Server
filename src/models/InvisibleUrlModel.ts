@@ -1,9 +1,9 @@
 import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
 
 @modelOptions({ options: { allowMixed: 0 } })
-export class ShortUrl {
+export class InvisibleUrl {
     /**
-     * The short url id.
+     * The invisible url id.
      */
     @prop()
     _id: string;
@@ -21,4 +21,4 @@ export class ShortUrl {
     uid: string;
 }
 
-export default getModelForClass(ShortUrl);
+export default getModelForClass(InvisibleUrl);
