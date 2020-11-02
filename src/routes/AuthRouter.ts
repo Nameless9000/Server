@@ -196,6 +196,8 @@ router.post('/login', JoiMiddleware(LoginSchema, 'body'), async (req: Request, r
     });
 
     user = user.toObject({ versionKey: false });
+    user['uid'] = user._id;
+    delete user._id;
     delete user.password;
 
     const token = sign(user, process.env.JWT_SECRET);
