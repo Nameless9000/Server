@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import {
+    AuthRouter,
     DomainsRouter,
     FilesRouter,
     InvitesRouter,
@@ -17,6 +18,7 @@ app.use('/files', FilesRouter);
 app.use('/invites', InvitesRouter);
 app.use('/users', UsersRouter);
 app.use('/domains', DomainsRouter);
+app.use('/auth', AuthRouter);
 
 app.listen(port, () => {
     console.log(`Listening to port ${port}`);

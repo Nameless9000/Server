@@ -4,12 +4,14 @@ import { logFile } from '../utils/LoggingUtil';
 import { extname } from 'path';
 import { s3, wipeFiles } from '../utils/S3Util';
 import UploadMiddleware from '../middlewares/UploadMiddleware';
-import DeletionMiddleware from '../middlewares/DeletionMiddleware';
 import multer, { Multer } from 'multer';
 import MulterS3 from 'multer-s3';
 import Files from '../models/FileModel';
 import Users from '../models/UserModel';
 import InvisibleUrl from '../models/InvisibleUrlModel';
+import JoiMiddleware from '../middlewares/JoiMiddleware';
+import DeletionSchema from '../schemas/DeletionSchema';
+import ConfigSchema from '../schemas/ConfigSchema';
 const router = Router();
 
 const upload: Multer = multer({
@@ -85,19 +87,14 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         }).catch((err) => {
             res.status(500).json({
                 success: false,
+                message: 'Something went wrong while logging your image.',
                 error: err.message,
             });
         });
 });
 
-router.get('/delete', DeletionMiddleware, async (req: Request, res: Response) => {
+router.get('/delete', JoiMiddleware(DeletionSchema, 'query'), async (req: Request, res: Response) => {
     const key = req.query.key as string;
-
-    if (!key) return res.status(400).json({
-        success: false,
-        error: 'Provide a deletion key.',
-    });
-
     const file = await Files.findOne({ deletionKey: key });
 
     if (!file) return res.status(404).json({
@@ -176,14 +173,8 @@ router.get('/count', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/config', async (req: Request, res: Response) => {
+router.get('/config', JoiMiddleware(ConfigSchema, 'query'), async (req: Request, res: Response) => {
     const key = req.query.key as string;
-
-    if (!key) return res.status(400).json({
-        success: false,
-        error: 'Provide a key.',
-    });
-
     const user = await Users.findOne({ key });
 
     if (!user) return res.status(401).json({

@@ -3,6 +3,9 @@ import Filter from 'bad-words';
 import Users from '../models/UserModel';
 import AdminMiddleware from '../middlewares/AdminMiddleware';
 import { s3 } from '../utils/S3Util';
+import JoiMiddleware from '../middlewares/JoiMiddleware';
+import TestimonialSchema from '../schemas/TestimonialSchema';
+import BlacklistSchema from '../schemas/BlacklistSchema';
 const filter = new Filter({
     list: ['elerium', 'payshost', 'pxl.blue', 'prophecy.photos', 'pays.host', 'pxlblue', 'prophecy'],
 });
@@ -34,7 +37,7 @@ router.get('/@me', (req: Request, res: Response) => {
         });
 });
 
-router.put('/testimonial', async (req: Request, res: Response) => {
+router.put('/testimonial', JoiMiddleware(TestimonialSchema, 'body'), async (req: Request, res: Response) => {
     const { testimonial }: { testimonial: string } = req.body;
 
     if (!req.user) return res.status(401).json({
@@ -45,16 +48,6 @@ router.put('/testimonial', async (req: Request, res: Response) => {
     if (req.user.blacklisted.status) return res.status(401).json({
         success: false,
         error: `You are blacklisted for: ${req.user.blacklisted.reason}`,
-    });
-
-    if (!testimonial) return res.status(400).json({
-        success: false,
-        error: 'Provide a testimonial',
-    });
-
-    if (testimonial.trim().length <= 3) return res.status(400).json({
-        success: false,
-        error: 'Your testimonial is too short.',
     });
 
     if (filter.isProfane(testimonial)) return res.status(400).json({
@@ -77,7 +70,7 @@ router.put('/testimonial', async (req: Request, res: Response) => {
     });
 });
 
-router.post('/:id/blacklist', AdminMiddleware, async (req: Request, res: Response) => {
+router.post('/:id/blacklist', AdminMiddleware, JoiMiddleware(BlacklistSchema, 'body'), async (req: Request, res: Response) => {
     const { id } = req.params;
     const reason = req.body.reason || 'No reason provided';
 

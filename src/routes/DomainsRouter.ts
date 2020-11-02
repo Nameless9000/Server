@@ -1,6 +1,8 @@
 import { Request, Response, Router } from 'express';
 import AdminMiddleware from '../middlewares/AdminMiddleware';
+import JoiMiddleware from '../middlewares/JoiMiddleware';
 import Domains from '../models/DomainModel';
+import DomainSchema from '../schemas/DomainSchema';
 const router = Router();
 
 router.get('/', async (req: Request, res: Response) => {
@@ -18,13 +20,8 @@ router.get('/', async (req: Request, res: Response) => {
         });
 });
 
-router.post('/', AdminMiddleware, async (req: Request, res: Response) => {
+router.post('/', AdminMiddleware, JoiMiddleware(DomainSchema, 'body'), async (req: Request, res: Response) => {
     const { name, wildcard, donated, donatedBy } = req.body;
-
-    if (!name || !wildcard) return res.status(400).json({
-        success: false,
-        error: 'Invalid fields.',
-    });
 
     if (await Domains.findOne({ name })) return res.status(400).json({
         success: false,
