@@ -4,7 +4,7 @@ import { ObjectSchema } from 'joi';
 export default (schema: ObjectSchema, property: 'body' | 'query') => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
-            console.log(await schema.validateAsync(req[property]));
+            await schema.validateAsync(req[property]);
             next();
         } catch (err) {
             res.status(400).json({
