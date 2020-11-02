@@ -89,14 +89,14 @@ export class User {
     /**
      * All the invites the user has created.
      */
-    @prop()
-    createdInvites: Array<string>;
+    @prop({ type: () => [String] })
+    createdInvites: string[];
 
     /**
      * The users that the user invited.
      */
-    @prop()
-    invitedUsers: Array<string>;
+    @prop({ type: () => [String] })
+    invitedUsers: string[];
 
     /**
      * The date that the user registered.
@@ -113,8 +113,8 @@ export class User {
     /**
      * The user's roles.
      */
-    @prop()
-    roles: Array<string>;
+    @prop({ type: () => [String] })
+    roles: string[];
 
     /**
      * The user's settings, their preferences, their domain, etc.

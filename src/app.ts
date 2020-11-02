@@ -6,6 +6,7 @@ import {
     InvitesRouter,
     UsersRouter
 } from './routes';
+import SessionMiddleware from './middlewares/SessionMiddleware';
 import express, { json } from 'express';
 import { connect } from 'mongoose';
 const app = express();
@@ -13,6 +14,7 @@ const port = process.env.PORT || 3000;
 
 app.disable('x-powered-by');
 app.use(json());
+app.use(SessionMiddleware);
 
 app.use('/files', FilesRouter);
 app.use('/invites', InvitesRouter);

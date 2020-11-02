@@ -1,13 +1,15 @@
 import { Request, Response, Router } from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import { generateString } from '../utils/GenerateUtil';
+import { hash, verify } from 'argon2';
+import { sendVerificationEmail } from '../utils/MailUtil';
 import JoiMiddleware from '../middlewares/JoiMiddleware';
 import RegisterSchema from '../schemas/RegisterSchema';
 import Users from '../models/UserModel';
 import Invites from '../models/InviteModel';
-import { v4 as uuidv4 } from 'uuid';
-import { generateString } from '../utils/GenerateUtil';
-import { hash } from 'argon2';
-import { sendVerificationEmail } from '../utils/MailUtil';
 import VerifySchema from '../schemas/VerifySchema';
+import LoginSchema from '../schemas/LoginSchema';
+import { sign } from 'jsonwebtoken';
 const router = Router();
 
 router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Request, res: Response) => {
@@ -163,6 +165,60 @@ router.get('/verify', JoiMiddleware(VerifySchema, 'query'), async (req: Request,
             success: false,
             error: err.message,
         });
+    });
+});
+
+router.post('/login', JoiMiddleware(LoginSchema, 'body'), async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+
+    if (req.user) return res.status(400).json({
+        success: false,
+        error: 'you are already logged in',
+    });
+
+    let user = await Users.findOne({ username });
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'invalid username',
+    });
+
+    if (!user.emailVerified) return res.status(401).json({
+        success: false,
+        error: 'your email is not verified',
+    });
+
+    const validPassword = await verify(user.password, password);
+
+    if (!validPassword) return res.status(401).json({
+        success: false,
+        error: 'invalid password',
+    });
+
+    user = user.toObject({ versionKey: false });
+    delete user.password;
+
+    const token = sign(user, process.env.JWT_SECRET);
+
+    res.cookie('jwt', token, { httpOnly: true, secure: false });
+
+    res.status(200).json({
+        success: true,
+        message: 'logged in',
+    });
+});
+
+router.get('/logout', (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    res.clearCookie('jwt');
+
+    res.status(200).json({
+        success: true,
+        message: 'logged out',
     });
 });
 
