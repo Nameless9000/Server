@@ -18,7 +18,6 @@ export default object({
         .required(),
 
     invite: string()
-        .alphanum()
         .required(),
 }).options({ abortEarly: false });
 

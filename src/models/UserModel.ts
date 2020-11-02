@@ -27,6 +27,18 @@ export class User {
     email: string;
 
     /**
+     * Whether or not the user's email is verified.
+     */
+    @prop()
+    emailVerified: boolean;
+
+    /**
+     * The user's email verification key.
+     */
+    @prop()
+    emailVerificationKey: string;
+
+    /**
      * The user's invite code.
      */
     @prop()

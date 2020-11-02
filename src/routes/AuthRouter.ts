@@ -3,6 +3,11 @@ import JoiMiddleware from '../middlewares/JoiMiddleware';
 import RegisterSchema from '../schemas/RegisterSchema';
 import Users from '../models/UserModel';
 import Invites from '../models/InviteModel';
+import { v4 as uuidv4 } from 'uuid';
+import { generateString } from '../utils/GenerateUtil';
+import { hash } from 'argon2';
+import { sendVerificationEmail } from '../utils/MailUtil';
+import VerifySchema from '../schemas/VerifySchema';
 const router = Router();
 
 router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Request, res: Response) => {
@@ -22,14 +27,142 @@ router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Requ
 
     if (userExists) return res.status(400).json({
         success: false,
-        error: 'this username already exists',
+        error: 'this username is already in use',
     });
 
-    const inviteExists = await Invites.findOne({ _id: invite });
+    const emailExists = await Users.findOne({ email: { $regex: new RegExp(email, 'i') } });
 
-    if (!inviteExists) return res.status(400).json({
+    if (emailExists) return res.status(400).json({
+        success: false,
+        error: 'this email is already in use',
+    });
+
+    const queriedInvite = await Invites.findOne({ _id: invite });
+
+    if (!queriedInvite) return res.status(400).json({
         success: false,
         error: 'invalid invite code',
+    });
+
+    if (queriedInvite.redeemed) return res.status(400).json({
+        success: false,
+        error: 'this invite has already been redeemed',
+    });
+
+    if (!queriedInvite.useable) return res.status(400).json({
+        success: false,
+        error: 'this invite is not usable',
+    });
+
+    let invitedBy = 'Unknown';
+
+    if (queriedInvite.createdBy !== 'Unknown') {
+        const inviter = await Users.findOne({ _id: queriedInvite.createdBy });
+
+        if (!inviter) return;
+
+        invitedBy = inviter.username;
+
+        await Users.updateOne({ _id: inviter._id }, {
+            $push: {
+                invitedUsers: username,
+            },
+        });
+    }
+
+    await Users.create({
+        _id: uuidv4(),
+        username,
+        password: await hash(password),
+        email,
+        emailVerified: false,
+        emailVerificationKey: generateString(30),
+        invite,
+        key: `astral_${generateString(20)}`,
+        discord: {
+            id: null,
+            avatar: null,
+        },
+        blacklisted: {
+            status: false,
+            reason: null,
+        },
+        uploads: 0,
+        invites: 0,
+        invitedBy,
+        createdInvites: [],
+        invitedUsers: [],
+        registrationDate: new Date().toLocaleDateString(),
+        testimonial: null,
+        roles: ['whitelisted'],
+        settings: {
+            showLink: false,
+            invisibleUrl: false,
+            domain: {
+                name: 'astral.cool',
+                subdomain: null,
+            },
+            embed: {
+                enabled: false,
+                color: null,
+                title: null,
+                description: null,
+            },
+        },
+    }).then((user) => {
+        // set session
+        sendVerificationEmail(user)
+            .then(async () => {
+                res.status(200).json({
+                    success: true,
+                    message: 'registered successfully, please check your email to verify',
+                });
+
+                await Invites.updateOne({ _id: invite }, {
+                    usedBy: username,
+                    redeemed: true,
+                });
+            }).catch((err) => {
+                res.status(500).json({
+                    success: false,
+                    error: err.message,
+                });
+            });
+    }).catch((err) => {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    });
+});
+
+router.get('/verify', JoiMiddleware(VerifySchema, 'query'), async (req: Request, res: Response) => {
+    const key = req.query.key as string;
+
+    const user = await Users.findOne({ emailVerificationKey: key });
+
+    if (!user) return res.status(404).json({
+        success: false,
+        error: 'invalid verification key',
+    });
+
+    if (user.emailVerified) return res.status(400).json({
+        success: false,
+        error: 'your email is already verified',
+    });
+
+    await Users.updateOne({ emailVerificationKey: key }, {
+        emailVerified: true,
+    }).then(() => {
+        res.status(200).json({
+            success: true,
+            message: 'verified email successfully',
+        });
+    }).catch((err) => {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
     });
 });
 
