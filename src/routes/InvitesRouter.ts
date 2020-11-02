@@ -37,19 +37,19 @@ router.delete('/:code', AdminMiddleware, async (req: Request, res: Response) => 
 
     if (!code) return res.status(400).json({
         success: false,
-        error: 'Provide a code.',
+        error: 'provide a code',
     });
 
     const invite = await Invites.findOne({ _id: code });
 
     if (!invite) res.status(404).json({
         success: false,
-        error: 'Invalid invite code.',
+        error: 'invalid invite code',
     });
 
     if (!invite.useable) return res.status(400).json({
         success: false,
-        error: 'This invite is not useable.',
+        error: 'this invite is not useable',
     });
 
     await Invites.updateOne({ _id: code }, {
@@ -57,7 +57,7 @@ router.delete('/:code', AdminMiddleware, async (req: Request, res: Response) => 
     }).then(() => {
         res.status(200).json({
             success: true,
-            message: 'Made invite unuseable.',
+            message: 'made invite unuseable',
         });
     }).catch((err) => {
         res.status(500).json({
@@ -72,14 +72,14 @@ router.get('/:code', AdminMiddleware, async (req: Request, res: Response) => {
 
     if (!code) return res.status(400).json({
         success: false,
-        error: 'Provide a code.',
+        error: 'provide a code',
     });
 
     let invite = await Invites.findOne({ _id: code });
 
     if (!invite) return res.status(404).json({
         success: false,
-        error: 'Invalid code.',
+        error: 'invalid code',
     });
 
     invite = invite.toObject();

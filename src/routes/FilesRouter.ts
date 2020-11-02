@@ -35,7 +35,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
 
     if (!file) return res.status(400).json({
         success: false,
-        error: 'Provide a file.',
+        error: 'provide a file',
     });
 
     const deletionKey = generateString(40);
@@ -87,7 +87,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         }).catch((err) => {
             res.status(500).json({
                 success: false,
-                message: 'Something went wrong while logging your image.',
+                message: 'something went wrong while logging your image',
                 error: err.message,
             });
         });
@@ -99,14 +99,14 @@ router.get('/delete', JoiMiddleware(DeletionSchema, 'query'), async (req: Reques
 
     if (!file) return res.status(404).json({
         success: false,
-        error: 'Invalid deletion key.',
+        error: 'invalid deletion key',
     });
 
     const user = await Users.findOne({ username: file.uploader.username });
 
     if (!user) return res.status(404).json({
         success: false,
-        error: 'The user attached to this file does not exist.',
+        error: 'the user attached to this file does not exist',
     });
 
     const params = {
@@ -119,7 +119,7 @@ router.get('/delete', JoiMiddleware(DeletionSchema, 'query'), async (req: Reques
             await file.remove();
             res.status(200).json({
                 success: true,
-                message: 'Deleted file successfully.',
+                message: 'deleted file successfully',
             });
         }).catch((err) => {
             res.status(500).json({
@@ -134,21 +134,21 @@ router.post('/wipe', async (req: Request, res: Response) => {
 
     if (!user) return res.status(401).json({
         success: false,
-        error: 'Unauthorized.',
+        error: 'unauthorized',
     });
 
     user = await Users.findOne({ _id: user._id });
 
     if (!user) return res.status(401).json({
         success: false,
-        error: 'Unauthorized.',
+        error: 'unauthorized',
     });
 
     await wipeFiles(user)
         .then(() => {
             res.status(200).json({
                 success: true,
-                message: 'Wiped images successfully.',
+                message: 'wiped images successfully',
             });
         }).catch((err) => {
             res.status(500).json({
@@ -179,7 +179,7 @@ router.get('/config', JoiMiddleware(ConfigSchema, 'query'), async (req: Request,
 
     if (!user) return res.status(401).json({
         success: false,
-        error: 'Unauthorized.',
+        error: 'unauthorized',
     });
 
     const config = {

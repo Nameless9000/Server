@@ -33,7 +33,7 @@ router.get('/@me', (req: Request, res: Response) => {
         res.status(200).json(req.user) :
         res.status(401).json({
             success: false,
-            error: 'Unauthorized.',
+            error: 'unauthorized',
         });
 });
 
@@ -47,12 +47,12 @@ router.put('/testimonial', JoiMiddleware(TestimonialSchema, 'body'), async (req:
 
     if (req.user.blacklisted.status) return res.status(401).json({
         success: false,
-        error: `You are blacklisted for: ${req.user.blacklisted.reason}`,
+        error: `you are blacklisted for: ${req.user.blacklisted.reason}`,
     });
 
     if (filter.isProfane(testimonial)) return res.status(400).json({
         success: false,
-        error: 'Your testimonial contains a blacklisted word.',
+        error: 'your testimonial contains a blacklisted word',
     });
 
     await Users.updateOne({ _id: req.user._id }, {
@@ -60,7 +60,7 @@ router.put('/testimonial', JoiMiddleware(TestimonialSchema, 'body'), async (req:
     }).then(() => {
         res.status(200).json({
             success: true,
-            message: 'Updated testimonial successfully.',
+            message: 'updated testimonial successfully',
         });
     }).catch((err) => {
         res.status(500).json({
@@ -76,19 +76,19 @@ router.post('/:id/blacklist', AdminMiddleware, JoiMiddleware(BlacklistSchema, 'b
 
     if (!id) return res.status(400).json({
         success: false,
-        error: 'Provide a uid.',
+        error: 'provide a uid',
     });
 
     const user = await Users.findOne({ _id: id });
 
     if (!user) return res.status(404).json({
         success: false,
-        error: 'Invalid uid.',
+        error: 'invalid uid',
     });
 
     if (user.blacklisted.status) res.status(400).json({
         success: false,
-        error: `This user is already blacklisted for: ${user.blacklisted.reason}`,
+        error: `this user is already blacklisted for: ${user.blacklisted.reason}`,
     });
 
     await Users.updateOne({ _id: id }, {
@@ -99,7 +99,7 @@ router.post('/:id/blacklist', AdminMiddleware, JoiMiddleware(BlacklistSchema, 'b
     }).then(() => {
         res.status(200).json({
             success: true,
-            message: 'Blacklisted user successfully.',
+            message: 'blacklisted user successfully',
         });
     }).catch((err) => {
         res.status(500).json({
@@ -114,19 +114,19 @@ router.post('/:id/whitelist', AdminMiddleware, async (req: Request, res: Respons
 
     if (!id) return res.status(400).json({
         success: false,
-        error: 'Provide a uid.',
+        error: 'provide a uid',
     });
 
     const user = await Users.findOne({ _id: id });
 
     if (!user) return res.status(404).json({
         success: false,
-        error: 'Invalid uid.',
+        error: 'invalid uid',
     });
 
     if (!user.blacklisted.status) res.status(400).json({
         success: false,
-        error: 'The specified user is not blacklisted',
+        error: 'the specified user is not blacklisted',
     });
 
     await Users.updateOne({ _id: id }, {
@@ -137,7 +137,7 @@ router.post('/:id/whitelist', AdminMiddleware, async (req: Request, res: Respons
     }).then(() => {
         res.status(200).json({
             success: true,
-            message: 'Whitelisted user successfully.',
+            message: 'whitelisted user successfully',
         });
     }).catch((err) => {
         res.status(500).json({
@@ -154,19 +154,19 @@ router.get('/:id/images', async (req: Request, res: Response) => {
 
     if (!key && !user || (key !== process.env.API_KEY)) return res.status(401).json({
         success: false,
-        error: 'Unauthorized.',
+        error: 'unauthorized',
     });
 
     if (!id) return res.status(400).json({
         success: false,
-        error: 'Provide a id.',
+        error: 'provide a id',
     });
 
     user = await Users.findOne({ _id: id });
 
     if (!user) return res.status(404).json({
         success: false,
-        error: 'Invalid id.',
+        error: 'invalid id',
     });
 
     const params = {
@@ -192,14 +192,14 @@ router.get('/:id', AdminMiddleware, async (req: Request, res: Response) => {
 
     if (!id) return res.status(400).json({
         success: false,
-        error: 'Provide a uid.',
+        error: 'provide a uid',
     });
 
     let user = await Users.findOne({ _id: id });
 
     if (!user) return res.status(404).json({
         success: false,
-        error: 'Invalid user.',
+        error: 'invalid user',
     });
 
     user = user.toObject();

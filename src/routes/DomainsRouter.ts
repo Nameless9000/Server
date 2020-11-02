@@ -25,7 +25,7 @@ router.post('/', AdminMiddleware, JoiMiddleware(DomainSchema, 'body'), async (re
 
     if (await Domains.findOne({ name })) return res.status(400).json({
         success: false,
-        error: 'This domain alraedy exists.',
+        error: 'this domain alraedy exists',
     });
 
     await Domains.create({
@@ -37,7 +37,7 @@ router.post('/', AdminMiddleware, JoiMiddleware(DomainSchema, 'body'), async (re
     }).then(() => {
         res.status(200).json({
             success: true,
-            message: 'Added domain successfully.',
+            message: 'added domain successfully',
         });
     }).catch((err) => {
         res.status(500).json({
@@ -52,21 +52,21 @@ router.delete('/:id', AdminMiddleware, async (req: Request, res: Response) => {
 
     if (!id) return res.status(500).json({
         success: false,
-        error: 'Please provide a domain name.',
+        error: 'please provide a domain name',
     });
 
     const domain = await Domains.findOne({ name: id });
 
     if (!domain) return res.status(404).json({
         success: false,
-        error: 'Invalid domain.',
+        error: 'invalid domain',
     });
 
     await domain.remove()
         .then(() => {
             res.status(202).json({
                 success: true,
-                message: 'Deleted domain successfully.',
+                message: 'deleted domain successfully',
             });
         }).catch((err) => {
             res.status(500).json({
