@@ -3,13 +3,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { generateString } from '../utils/GenerateUtil';
 import { hash, verify } from 'argon2';
 import { sendVerificationEmail } from '../utils/MailUtil';
+import { oAuth } from '../utils/oAuth2Util';
+import { sign } from 'jsonwebtoken';
 import JoiMiddleware from '../middlewares/JoiMiddleware';
 import RegisterSchema from '../schemas/RegisterSchema';
 import Users from '../models/UserModel';
 import Invites from '../models/InviteModel';
 import VerifySchema from '../schemas/VerifySchema';
 import LoginSchema from '../schemas/LoginSchema';
-import { sign } from 'jsonwebtoken';
+import CallbackSchema from '../schemas/CallbackSchema';
 const router = Router();
 
 router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Request, res: Response) => {
@@ -196,8 +198,6 @@ router.post('/login', JoiMiddleware(LoginSchema, 'body'), async (req: Request, r
     });
 
     user = user.toObject({ versionKey: false });
-    user['uid'] = user._id;
-    delete user._id;
     delete user.password;
 
     const token = sign(user, process.env.JWT_SECRET);
@@ -221,6 +221,70 @@ router.get('/logout', (req: Request, res: Response) => {
     res.status(200).json({
         success: true,
         message: 'logged out',
+    });
+});
+
+router.get('/discord/link', (req: Request, res: Response) => {
+    req.user ?
+        res.redirect(process.env.DISCORD_OAUTH_URL) :
+        res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
+});
+
+router.get('/discord/callback', JoiMiddleware(CallbackSchema, 'query'), async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    const code = req.query.code as string;
+    const discord = new oAuth(code);
+
+    const validCode = await discord.validCode();
+
+    if (!validCode) return res.status(400).json({
+        success: false,
+        error: 'invalid oauth code',
+    });
+
+    const user = await discord.getUser();
+
+    if (!user) return res.status(400).json({
+        success: false,
+        error: 'something went wrong',
+    });
+
+    const findUser = await Users.findOne({ _id: req.user._id });
+
+    if (!findUser) return res.status(400).json({
+        success: false,
+        error: 'invalid session',
+    });
+
+    const addToGuild = await discord.addGuildMember(findUser);
+
+    if (addToGuild.error !== null && !addToGuild.success) return res.status(500).json({
+        success: false,
+        error: addToGuild.error,
+    });
+
+    await Users.updateOne({ _id: req.user._id }, {
+        discord: {
+            id: user.id,
+            avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
+        },
+    }).then(() => {
+        res.status(200).json({
+            success: true,
+            message: 'linked discord successfully',
+        });
+    }).catch((err) => {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
     });
 });
 
