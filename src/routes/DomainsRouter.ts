@@ -12,6 +12,8 @@ router.get('/', async (req: Request, res: Response) => {
                 domain = domain.toObject({
                     versionKey: false,
                 });
+                delete domain.__v;
+                delete domain._id;
             }
             res.status(200).json({
                 success: true,
