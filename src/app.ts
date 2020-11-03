@@ -4,6 +4,7 @@ import {
     DomainsRouter,
     FilesRouter,
     InvitesRouter,
+    RootRouter,
     UsersRouter
 } from './routes';
 import SessionMiddleware from './middlewares/SessionMiddleware';
@@ -21,6 +22,7 @@ app.use('/invites', InvitesRouter);
 app.use('/users', UsersRouter);
 app.use('/domains', DomainsRouter);
 app.use('/auth', AuthRouter);
+app.use('/', RootRouter);
 
 app.listen(port, () => {
     console.log(`Listening to port ${port}`);
