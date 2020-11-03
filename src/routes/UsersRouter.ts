@@ -7,7 +7,7 @@ import JoiMiddleware from '../middlewares/JoiMiddleware';
 import TestimonialSchema from '../schemas/TestimonialSchema';
 import BlacklistSchema from '../schemas/BlacklistSchema';
 const filter = new Filter({
-    list: ['elerium', 'payshost', 'pxl.blue', 'prophecy.photos', 'pays.host', 'pxlblue', 'prophecy'],
+    list: ['payshost', 'pxl.blue', 'prophecy.photos', 'pays.host', 'pxlblue', 'prophecy', 'pxl'],
 });
 const router = Router();
 

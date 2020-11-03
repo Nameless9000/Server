@@ -263,6 +263,11 @@ router.get('/discord/callback', JoiMiddleware(CallbackSchema, 'query'), async (r
         error: 'invalid session',
     });
 
+    if (!findUser.emailVerified) return res.status(401).json({
+        success: false,
+        error: 'your email is not verified',
+    });
+
     const addToGuild = await discord.addGuildMember(findUser);
 
     if (addToGuild.error !== null && !addToGuild.success) return res.status(500).json({
