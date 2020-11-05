@@ -89,8 +89,8 @@ export class User {
     /**
      * All the invites the user has created.
      */
-    @prop({ type: () => [String] })
-    createdInvites: string[];
+    @prop()
+    createdInvites: any[];
 
     /**
      * The users that the user invited.

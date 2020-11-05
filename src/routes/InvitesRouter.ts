@@ -2,13 +2,34 @@ import { Request, Response, Router } from 'express';
 import { generateInvite } from '../utils/GenerateUtil';
 import AdminMiddleware from '../middlewares/AdminMiddleware';
 import Invites from '../models/InviteModel';
+import User from '../models/UserModel';
 const router = Router();
 
-router.post('/', AdminMiddleware, async (req: Request, res: Response) => {
-    const amount = req.body.amount || 1;
-    const inviter = req.body.inviter || 'Unknown';
-    const useable = req.body.usable || true;
+router.post('/', async (req: Request, res: Response) => {
+    let { user } = req;
+    let useable = req.body.usable || true;
+    let inviter = 'Admin';
+    let amount = req.body.amount || 1;
+    const key = req.headers.authorization as string;
     const invites = [];
+
+    if (!user && key !== process.env.API_KEY) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    if (user && key !== process.env.API_KEY) {
+        user = await User.findOne({ _id: req.user._id });
+
+        if (!user || user._id !== req.user._id) return res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
+
+        amount = 1;
+        inviter = user.username;
+        useable = true;
+    }
 
     for (let i = 0; i < amount; i++) {
         const invite = generateInvite();
@@ -16,6 +37,7 @@ router.post('/', AdminMiddleware, async (req: Request, res: Response) => {
             link: `https://astral.cool/?code=${invite}`,
             code: invite,
         });
+
         await Invites.create({
             _id: invite,
             createdBy: inviter,
@@ -24,6 +46,17 @@ router.post('/', AdminMiddleware, async (req: Request, res: Response) => {
             usedBy: null,
             redeemed: false,
         });
+
+        if (user && key !== process.env.API_KEY) {
+            await User.updateOne({ _id: user._id }, {
+                $push: {
+                    createdInvites: {
+                        code: invite,
+                        dateCreated: new Date().toLocaleDateString(),
+                    },
+                },
+            });
+        }
     }
 
     res.status(200).json({

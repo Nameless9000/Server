@@ -10,9 +10,14 @@ import {
 import SessionMiddleware from './middlewares/SessionMiddleware';
 import express, { json } from 'express';
 import { connect } from 'mongoose';
+import cors from 'cors';
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(cors({
+    credentials: true,
+    origin: 'http://localhost:3000',
+}));
 app.disable('x-powered-by');
 app.use(json());
 app.use(SessionMiddleware);

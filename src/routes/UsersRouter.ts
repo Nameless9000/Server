@@ -28,13 +28,20 @@ router.get('/count', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/@me', (req: Request, res: Response) => {
-    req.user ?
-        res.status(200).json(req.user) :
-        res.status(401).json({
-            success: false,
-            error: 'unauthorized',
-        });
+router.get('/@me', async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    const user = await Users.findOne({ _id: req.user._id });
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    res.status(200).json(user);
 });
 
 router.put('/testimonial', JoiMiddleware(TestimonialSchema, 'body'), async (req: Request, res: Response) => {
@@ -152,7 +159,7 @@ router.get('/:id/images', async (req: Request, res: Response) => {
     const { id } = req.params;
     const key = req.headers.authorization as string;
 
-    if (!key && !user || (key !== process.env.API_KEY)) return res.status(401).json({
+    if (!user && key !== process.env.API_KEY) return res.status(401).json({
         success: false,
         error: 'unauthorized',
     });
@@ -169,16 +176,23 @@ router.get('/:id/images', async (req: Request, res: Response) => {
         error: 'invalid id',
     });
 
+    if (key !== process.env.API_KEY && user._id !== req.user._id) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
     const params = {
         Bucket: process.env.S3_BUCKET,
         Prefix: `${user._id}/`,
     };
 
     const objects = await s3.listObjectsV2(params).promise();
+    console.log(objects);
+
     const images = [];
 
     for (const object of objects.Contents) {
-        images.push(`https://astral.cool/${object.Key.split('/')[1]}`);
+        images.push(`https://cdn.astral.cool/${user._id}/${object.Key.split('/')[1]}`);
     }
 
     res.status(200).json({

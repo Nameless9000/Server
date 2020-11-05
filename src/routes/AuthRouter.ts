@@ -281,10 +281,7 @@ router.get('/discord/callback', JoiMiddleware(CallbackSchema, 'query'), async (r
             avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
         },
     }).then(() => {
-        res.status(200).json({
-            success: true,
-            message: 'linked discord successfully',
-        });
+        res.redirect('http://localhost:3000/dashboard');
     }).catch((err) => {
         res.status(500).json({
             success: false,
