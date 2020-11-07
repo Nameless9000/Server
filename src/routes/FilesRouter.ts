@@ -53,7 +53,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         deletionKey,
         dateUploaded: new Date().toLocaleDateString(),
         displayType: embed.enabled ? 'embed' : 'raw',
-        showLink: user.settings.showLink,
+        showLink: req.headers.showlink ? req.headers.showlink === 'true' : user.settings.showLink,
         embed,
         uploader: {
             username: user.username,
@@ -69,10 +69,11 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
                 $inc: { uploads: +1 },
             });
 
-            const baseUrl = `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`;
+            let baseUrl = `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`;
+            if (req.headers.domain) baseUrl = `https://${req.headers.domain}`;
             let imageUrl = `${baseUrl}/${file.filename}`;
 
-            if (user.settings.invisibleUrl) {
+            if (req.headers.shortlink ? req.headers.shortlink === 'true' : user.settings.invisibleUrl) {
                 const shortUrlId = generateShortUrl();
                 await InvisibleUrl.create({
                     _id: shortUrlId,
