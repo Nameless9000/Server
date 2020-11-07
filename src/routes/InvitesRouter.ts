@@ -26,6 +26,11 @@ router.post('/', async (req: Request, res: Response) => {
             error: 'unauthorized',
         });
 
+        if (user.invites <= 0) return res.status(401).json({
+            success: false,
+            error: 'you do not have any invites',
+        });
+
         amount = 1;
         inviter = user.username;
         useable = true;
@@ -53,8 +58,10 @@ router.post('/', async (req: Request, res: Response) => {
                     createdInvites: {
                         code: invite,
                         dateCreated: new Date().toLocaleDateString(),
+                        useable: true,
                     },
                 },
+                invites: user.invites - 1,
             });
         }
     }
@@ -65,7 +72,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
 });
 
-router.delete('/:code', AdminMiddleware, async (req: Request, res: Response) => {
+router.delete('/:code', async (req: Request, res: Response) => {
     const code = req.params.code;
 
     if (!code) return res.status(400).json({
@@ -87,7 +94,11 @@ router.delete('/:code', AdminMiddleware, async (req: Request, res: Response) => 
 
     await Invites.updateOne({ _id: code }, {
         useable: false,
-    }).then(() => {
+    }).then(async () => {
+        await User.updateOne({ 'username': invite.createdBy, 'createdInvites.code': invite._id }, {
+            'createdInvites.$.useable': false,
+        });
+
         res.status(200).json({
             success: true,
             message: 'made invite unuseable',

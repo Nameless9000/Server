@@ -187,12 +187,16 @@ router.get('/:id/images', async (req: Request, res: Response) => {
     };
 
     const objects = await s3.listObjectsV2(params).promise();
-    console.log(objects);
+    objects.Contents.sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime());
 
     const images = [];
 
     for (const object of objects.Contents) {
-        images.push(`https://cdn.astral.cool/${user._id}/${object.Key.split('/')[1]}`);
+        images.push({
+            link: `https://cdn.astral.cool/${user._id}/${object.Key.split('/')[1]}`,
+            dateUploaded: object.LastModified.toLocaleDateString(),
+            filename: object.Key.split('/')[1],
+        });
     }
 
     res.status(200).json({

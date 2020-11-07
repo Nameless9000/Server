@@ -1,5 +1,16 @@
 import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
 
+class Invite {
+    @prop()
+    code: string;
+
+    @prop()
+    dateCreated: string;
+
+    @prop()
+    useable: boolean;
+}
+
 @modelOptions({ options: { allowMixed: 0 } })
 export class User {
     /**
@@ -89,8 +100,8 @@ export class User {
     /**
      * All the invites the user has created.
      */
-    @prop()
-    createdInvites: any[];
+    @prop({ type: () => [Invite] })
+    createdInvites: Invite[];
 
     /**
      * The users that the user invited.

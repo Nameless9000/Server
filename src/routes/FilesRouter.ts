@@ -28,6 +28,9 @@ const upload: Multer = multer({
             }
         },
     }),
+    limits: {
+        fileSize: 50 * 1e+6,
+    },
 });
 
 router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, res: Response) => {
@@ -127,6 +130,52 @@ router.get('/delete', JoiMiddleware(DeletionSchema, 'query'), async (req: Reques
                 error: err.message,
             });
         });
+});
+
+router.delete('/:file', async (req: Request, res: Response) => {
+    const id = req.params.file;
+    let { user } = req;
+
+    if (!id) return res.status(400).json({
+        success: false,
+        error: 'provide a id',
+    });
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'invalid user',
+    });
+
+    user = await Users.findOne({ _id: user._id });
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'invalid user',
+    });
+
+    const file = await Files.findOne({ filename: id });
+
+    if (!file) return res.status(404).json({
+        success: false,
+        error: 'invalid file',
+    });
+
+    const params = {
+        Bucket: process.env.S3_BUCKET,
+        Key: `${user._id}/${file.filename}`,
+    };
+
+    try {
+        await s3.deleteObject(params).promise();
+        await file.remove();
+
+        res.status(200).json({
+            success: true,
+            message: 'deleted file successfully',
+        });
+    } catch (err) {
+        console.log(err.message);
+    }
 });
 
 router.post('/wipe', async (req: Request, res: Response) => {

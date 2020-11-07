@@ -200,7 +200,7 @@ router.post('/login', JoiMiddleware(LoginSchema, 'body'), async (req: Request, r
     user = user.toObject({ versionKey: false });
     delete user.password;
 
-    const token = sign(user, process.env.JWT_SECRET);
+    const token = sign({ _id: user._id }, process.env.JWT_SECRET);
 
     res.cookie('jwt', token, { httpOnly: true, secure: false });
 
