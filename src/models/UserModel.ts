@@ -132,6 +132,10 @@ export class User {
      */
     @prop()
     settings: {
+        randomDomain: {
+            enabled: boolean;
+            domains: string[];
+        },
         showLink: boolean;
         invisibleUrl: boolean;
         domain: {

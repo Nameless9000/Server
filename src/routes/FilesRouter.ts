@@ -70,10 +70,14 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
             });
 
             let baseUrl = `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`;
+
             if (req.headers.domain) baseUrl = `https://${req.headers.domain}`;
+            if (req.headers.randomdomain ? req.headers.randomdomain === 'true' : user.settings.randomDomain.enabled)
+                baseUrl = `https://${user.settings.randomDomain.domains[Math.floor(Math.random() * user.settings.randomDomain.domains.length)] || 'astral.cool'}`;
+
             let imageUrl = `${baseUrl}/${file.filename}`;
 
-            if (req.headers.shortlink ? req.headers.shortlink === 'true' : user.settings.invisibleUrl) {
+            if (req.headers.invisiblelink ? req.headers.invisiblelink === 'true' : user.settings.invisibleUrl) {
                 const shortUrlId = generateShortUrl();
                 await InvisibleUrl.create({
                     _id: shortUrlId,

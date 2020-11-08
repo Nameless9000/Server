@@ -100,6 +100,10 @@ router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Requ
         testimonial: null,
         roles: ['whitelisted'],
         settings: {
+            randomDomain: {
+                enabled: false,
+                domains: [],
+            },
             showLink: false,
             invisibleUrl: false,
             domain: {
