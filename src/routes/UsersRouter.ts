@@ -6,6 +6,11 @@ import { s3 } from '../utils/S3Util';
 import JoiMiddleware from '../middlewares/JoiMiddleware';
 import TestimonialSchema from '../schemas/TestimonialSchema';
 import BlacklistSchema from '../schemas/BlacklistSchema';
+import UpdateDomainSchema from '../schemas/UpdateDomainSchema';
+import AddRandomDomainSchema from '../schemas/AddRandomDomainSchema';
+import DeleteRandomDomainSchema from '../schemas/DeleteRandomDomainSchema';
+import SettingsSchema from '../schemas/SettingsSchema';
+import EmbedSchema from '../schemas/EmbedSchema';
 const filter = new Filter({
     list: ['payshost', 'pxl.blue', 'prophecy.photos', 'pays.host', 'pxlblue', 'prophecy', 'pxl'],
 });
@@ -42,6 +47,188 @@ router.get('/@me', async (req: Request, res: Response) => {
     });
 
     res.status(200).json(user);
+});
+
+router.put('/@me/domain', JoiMiddleware(UpdateDomainSchema, 'body'), async (req: Request, res: Response) => {
+    const { user } = req;
+    const { type, domain, subdomain } = req.body;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    try {
+        if (type === 'wildcard') {
+            await Users.updateOne({ _id: user._id }, {
+                'settings.domain': {
+                    name: domain.name,
+                    subdomain,
+                },
+            });
+        } else if (type === 'normal') {
+            await Users.updateOne({ _id: user._id }, {
+                'settings.domain': {
+                    name: domain.name,
+                    subdomain: '',
+                },
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'updated domain successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.put('/@me/randomDomain', JoiMiddleware(AddRandomDomainSchema, 'body'), async (req: Request, res: Response) => {
+    const { user } = req;
+    const { domain } = req.body;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    try {
+        await Users.updateOne({ _id: user._id }, {
+            $push: {
+                'settings.randomDomain.domains': domain,
+            },
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'added domain successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.delete('/@me/randomDomain', JoiMiddleware(DeleteRandomDomainSchema, 'body'), async (req: Request, res: Response) => {
+    let { user } = req;
+    const { domain } = req.body;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    try {
+        user = await Users.findOne({ _id: user._id });
+
+        if (!user) return res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
+
+        await Users.updateOne({ _id: user._id }, {
+            'settings.randomDomain.domains': user.settings.randomDomain.domains.filter((d) => d !== domain),
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'deleted domain successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.put('/@me/settings', JoiMiddleware(SettingsSchema, 'body'), async (req: Request, res: Response) => {
+    let { user } = req;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    try {
+        user = await Users.findOne({ _id: user._id });
+
+        if (!user) return res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
+
+        const toUpdate: any = {};
+
+        for (const entry of Object.entries(req.body)) {
+            if (entry[0] === 'randomDomain') {
+                toUpdate['settings.randomDomain.enabled'] = entry[1];
+            } else if (entry[0] === 'embed') {
+                toUpdate['settings.embed.enabled'] = entry[1];
+            } else {
+                toUpdate[`settings.${entry[0]}`] = entry[1];
+            }
+        }
+
+        await Users.updateOne({ _id: user._id }, toUpdate);
+
+        res.status(200).json({
+            success: true,
+            message: 'updated settings successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.put('/@me/embed', JoiMiddleware(EmbedSchema, 'body'), async (req: Request, res: Response) => {
+    let { user } = req;
+    const { title, description, color } = req.body;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    try {
+        user = await Users.findOne({ _id: user._id });
+
+        if (!user) return res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
+
+        await Users.updateOne({ _id: user._id }, {
+            settings: {
+                ...user.settings,
+                embed: {
+                    ...user.settings.embed,
+                    title,
+                    description,
+                    color,
+                },
+            },
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'updated embed successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
 router.put('/testimonial', JoiMiddleware(TestimonialSchema, 'body'), async (req: Request, res: Response) => {
