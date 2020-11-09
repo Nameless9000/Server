@@ -1,6 +1,5 @@
 import { Request, Response, Router } from 'express';
 import { generateShortUrl, generateString } from '../utils/GenerateUtil';
-import { logFile } from '../utils/LoggingUtil';
 import { extname } from 'path';
 import { s3, wipeFiles } from '../utils/S3Util';
 import UploadMiddleware from '../middlewares/UploadMiddleware';
@@ -46,7 +45,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
     const { embed } = user.settings;
     const { domain } = user.settings;
 
-    const uploadedFile = await Files.create({
+    await Files.create({
         filename: file.filename,
         originalname: file.originalname,
         mimetype: file.mimetype,
@@ -61,44 +60,35 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         },
     });
 
-    await logFile(uploadedFile, user)
-        .then(async () => {
-            await Users.updateOne({
-                _id: user._id,
-            }, {
-                $inc: { uploads: +1 },
-            });
+    await Users.updateOne({
+        _id: user._id,
+    }, {
+        $inc: { uploads: +1 },
+    });
 
-            let baseUrl = `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`;
+    let baseUrl = `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`;
 
-            if (req.headers.domain) baseUrl = `https://${req.headers.domain}`;
-            if (req.headers.randomdomain ? req.headers.randomdomain === 'true' : user.settings.randomDomain.enabled)
-                baseUrl = `https://${user.settings.randomDomain.domains[Math.floor(Math.random() * user.settings.randomDomain.domains.length)] || 'astral.cool'}`;
+    if (req.headers.domain) baseUrl = `https://${req.headers.domain}`;
+    if (req.headers.randomdomain ? req.headers.randomdomain === 'true' : user.settings.randomDomain.enabled)
+        baseUrl = `https://${user.settings.randomDomain.domains[Math.floor(Math.random() * user.settings.randomDomain.domains.length)] || 'astral.cool'}`;
 
-            let imageUrl = `${baseUrl}/${file.filename}`;
+    let imageUrl = `${baseUrl}/${file.filename}`;
 
-            if (req.headers.invisiblelink ? req.headers.invisiblelink === 'true' : user.settings.invisibleUrl) {
-                const shortUrlId = generateShortUrl();
-                await InvisibleUrl.create({
-                    _id: shortUrlId,
-                    filename: file.filename,
-                    uid: user._id,
-                });
-                imageUrl = `${baseUrl}/${shortUrlId}`;
-            }
-
-            res.status(200).json({
-                success: true,
-                imageUrl,
-                deletionUrl: `${process.env.BACKEND_URL}/files/delete?key=${deletionKey}`,
-            });
-        }).catch((err) => {
-            res.status(500).json({
-                success: false,
-                message: 'something went wrong while logging your image',
-                error: err.message,
-            });
+    if (req.headers.invisiblelink ? req.headers.invisiblelink === 'true' : user.settings.invisibleUrl) {
+        const shortUrlId = generateShortUrl();
+        await InvisibleUrl.create({
+            _id: shortUrlId,
+            filename: file.filename,
+            uid: user._id,
         });
+        imageUrl = `${baseUrl}/${shortUrlId}`;
+    }
+
+    res.status(200).json({
+        success: true,
+        imageUrl,
+        deletionUrl: `${process.env.BACKEND_URL}/files/delete?key=${deletionKey}`,
+    });
 });
 
 router.get('/delete', JoiMiddleware(DeletionSchema, 'query'), async (req: Request, res: Response) => {
