@@ -233,6 +233,42 @@ router.get('/logout', (req: Request, res: Response) => {
     });
 });
 
+router.get('/login/discord', (req: Request, res: Response) => {
+    !req.user ?
+        res.redirect(process.env.DISCORD_OAUTH_LOGIN_URL) :
+        res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+});
+
+router.get('/login/discord/callback', async (req: Request, res: Response) => {
+    if (req.user) return res.status(400).json({
+        success: false,
+        erorr: 'you are already logged in',
+    });
+
+    const code = req.query.code as string;
+    const discord = new oAuth(code);
+
+    const validCode = await discord.validCode('login');
+
+    if (!validCode) return res.status(400).json({
+        success: false,
+        error: 'invalid oauth code',
+    });
+
+    const user = await discord.getUser();
+
+    if (!user) return res.status(500).redirect(process.env.FRONTEND_URL);
+
+    const findUser = await Users.findOne({ 'discord.id': user.id });
+
+    if (!findUser) return res.status(401).redirect(process.env.FRONTEND_URL);
+
+    const token = sign({ _id: findUser._id }, process.env.JWT_SECRET);
+
+    res.cookie('jwt', token, { httpOnly: true, secure: false });
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+});
+
 router.get('/discord/link', (req: Request, res: Response) => {
     req.user ?
         res.redirect(process.env.DISCORD_OAUTH_URL) :

@@ -16,13 +16,14 @@ class oAuth {
 
     /**
      * Check if a oauth code is valid.
+     * @param {string} request What you want to check for.
      */
-    async validCode(): Promise<boolean> {
+    async validCode(request: string = 'link'): Promise<boolean> {
         try {
             const { data } = await Axios.post('https://discord.com/api/oauth2/token', stringify({
                 client_id: process.env.DISCORD_CLIENT_ID,
                 client_secret: process.env.DISCORD_CLIENT_SECRET,
-                redirect_uri: process.env.DISCORD_REDIRECT_URI,
+                redirect_uri: request !== 'login' ? process.env.DISCORD_REDIRECT_URI : process.env.DISCORD_LOGIN_REDIRECT_URI,
                 grant_type: 'authorization_code',
                 code: this.code,
             }), {
