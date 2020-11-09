@@ -21,6 +21,16 @@ export default async (req: Request, res: Response, next: NextFunction) => {
         error: `you are blacklisted for: ${user.blacklisted.reason}`,
     });
 
+    if (!user.discord.id || user.discord.id === '') return res.status(401).json({
+        success: false,
+        error: 'please verify your discord',
+    });
+
+    if (!user.emailVerified) return res.status(401).json({
+        success: false,
+        erorr: 'please verify your email',
+    });
+
     req.user = user;
     next();
 };

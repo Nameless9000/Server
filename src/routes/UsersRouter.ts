@@ -50,7 +50,7 @@ router.get('/@me', async (req: Request, res: Response) => {
 });
 
 router.put('/@me/domain', JoiMiddleware(UpdateDomainSchema, 'body'), async (req: Request, res: Response) => {
-    const { user } = req;
+    let { user } = req;
     const { type, domain, subdomain } = req.body;
 
     if (!user) return res.status(401).json({
@@ -59,6 +59,23 @@ router.put('/@me/domain', JoiMiddleware(UpdateDomainSchema, 'body'), async (req:
     });
 
     try {
+        user = await Users.findOne({ _id: user._id });
+
+        if (!user) return res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
+
+        if (!user.emailVerificationKey) return res.status(401).json({
+            success: false,
+            error: 'please verify your email',
+        });
+
+        if (user.blacklisted.status) return res.status(401).json({
+            success: false,
+            error: `you are blacklisted for: ${req.user.blacklisted.reason}`,
+        });
+
         if (type === 'wildcard') {
             await Users.updateOne({ _id: user._id }, {
                 'settings.domain': {
@@ -88,7 +105,7 @@ router.put('/@me/domain', JoiMiddleware(UpdateDomainSchema, 'body'), async (req:
 });
 
 router.put('/@me/randomDomain', JoiMiddleware(AddRandomDomainSchema, 'body'), async (req: Request, res: Response) => {
-    const { user } = req;
+    let { user } = req;
     const { domain } = req.body;
 
     if (!user) return res.status(401).json({
@@ -97,6 +114,23 @@ router.put('/@me/randomDomain', JoiMiddleware(AddRandomDomainSchema, 'body'), as
     });
 
     try {
+        user = await Users.findOne({ _id: user._id });
+
+        if (!user) return res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
+
+        if (!user.emailVerificationKey) return res.status(401).json({
+            success: false,
+            error: 'please verify your email',
+        });
+
+        if (user.blacklisted.status) return res.status(401).json({
+            success: false,
+            error: `you are blacklisted for: ${req.user.blacklisted.reason}`,
+        });
+
         await Users.updateOne({ _id: user._id }, {
             $push: {
                 'settings.randomDomain.domains': domain,
@@ -132,6 +166,16 @@ router.delete('/@me/randomDomain', JoiMiddleware(DeleteRandomDomainSchema, 'body
             error: 'unauthorized',
         });
 
+        if (!user.emailVerificationKey) return res.status(401).json({
+            success: false,
+            error: 'please verify your email',
+        });
+
+        if (user.blacklisted.status) return res.status(401).json({
+            success: false,
+            error: `you are blacklisted for: ${req.user.blacklisted.reason}`,
+        });
+
         await Users.updateOne({ _id: user._id }, {
             'settings.randomDomain.domains': user.settings.randomDomain.domains.filter((d) => d !== domain),
         });
@@ -162,6 +206,16 @@ router.put('/@me/settings', JoiMiddleware(SettingsSchema, 'body'), async (req: R
         if (!user) return res.status(401).json({
             success: false,
             error: 'unauthorized',
+        });
+
+        if (!user.emailVerificationKey) return res.status(401).json({
+            success: false,
+            error: 'please verify your email',
+        });
+
+        if (user.blacklisted.status) return res.status(401).json({
+            success: false,
+            error: `you are blacklisted for: ${req.user.blacklisted.reason}`,
         });
 
         const toUpdate: any = {};
@@ -207,6 +261,16 @@ router.put('/@me/embed', JoiMiddleware(EmbedSchema, 'body'), async (req: Request
             error: 'unauthorized',
         });
 
+        if (!user.emailVerificationKey) return res.status(401).json({
+            success: false,
+            error: 'please verify your email',
+        });
+
+        if (user.blacklisted.status) return res.status(401).json({
+            success: false,
+            error: `you are blacklisted for: ${req.user.blacklisted.reason}`,
+        });
+
         await Users.updateOne({ _id: user._id }, {
             settings: {
                 ...user.settings,
@@ -246,6 +310,11 @@ router.post('/@me/disable', async (req: Request, res: Response) => {
         error: 'unauthorized',
     });
 
+    if (user.blacklisted.status) return res.status(401).json({
+        success: false,
+        error: `you are blacklisted for: ${req.user.blacklisted.reason}`,
+    });
+
     try {
         await Users.updateOne({ _id: user._id }, {
             blacklisted: {
@@ -273,7 +342,7 @@ router.put('/testimonial', JoiMiddleware(TestimonialSchema, 'body'), async (req:
 
     if (!req.user) return res.status(401).json({
         success: false,
-        error: 'Unauthorized.',
+        error: 'unauthorized',
     });
 
     if (req.user.blacklisted.status) return res.status(401).json({
