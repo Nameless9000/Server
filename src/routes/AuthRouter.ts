@@ -63,15 +63,15 @@ router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Requ
     if (queriedInvite.createdBy !== 'Unknown') {
         const inviter = await Users.findOne({ _id: queriedInvite.createdBy });
 
-        if (!inviter) return;
+        if (inviter) {
+            invitedBy = inviter.username;
 
-        invitedBy = inviter.username;
-
-        await Users.updateOne({ _id: inviter._id }, {
-            $push: {
-                invitedUsers: username,
-            },
-        });
+            await Users.updateOne({ _id: inviter._id }, {
+                $push: {
+                    invitedUsers: username,
+                },
+            });
+        }
     }
 
     await Users.create({
