@@ -231,6 +231,43 @@ router.put('/@me/embed', JoiMiddleware(EmbedSchema, 'body'), async (req: Request
     }
 });
 
+router.post('/@me/disable', async (req: Request, res: Response) => {
+    let { user } = req;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    user = await Users.findOne({ _id: user._id });
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    try {
+        await Users.updateOne({ _id: user._id }, {
+            blacklisted: {
+                status: true,
+                reason: 'disabled account',
+            },
+        });
+
+        res.clearCookie('jwt');
+
+        res.status(200).json({
+            success: true,
+            message: 'disabled account successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            erorr: err.message,
+        });
+    }
+});
+
 router.put('/testimonial', JoiMiddleware(TestimonialSchema, 'body'), async (req: Request, res: Response) => {
     const { testimonial }: { testimonial: string } = req.body;
 

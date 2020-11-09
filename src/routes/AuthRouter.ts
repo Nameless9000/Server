@@ -189,16 +189,21 @@ router.post('/login', JoiMiddleware(LoginSchema, 'body'), async (req: Request, r
         error: 'invalid username',
     });
 
-    if (!user.emailVerified) return res.status(401).json({
-        success: false,
-        error: 'your email is not verified',
-    });
-
     const validPassword = await verify(user.password, password);
 
     if (!validPassword) return res.status(401).json({
         success: false,
         error: 'invalid password',
+    });
+
+    if (!user.emailVerified) return res.status(401).json({
+        success: false,
+        error: 'your email is not verified',
+    });
+
+    if (user.blacklisted.status) return res.status(401).json({
+        success: false,
+        error: `you are blacklisted for: ${user.blacklisted.reason}`,
     });
 
     user = user.toObject({ versionKey: false });
