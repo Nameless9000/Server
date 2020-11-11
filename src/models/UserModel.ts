@@ -14,7 +14,7 @@ class Invite {
 @modelOptions({ options: { allowMixed: 0 } })
 export class User {
     /**
-     * The user's uid.
+     * The user's uuid.
      */
     @prop()
     _id: string;

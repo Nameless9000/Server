@@ -9,13 +9,6 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
     await Domains.find({})
         .then((domains) => {
-            for (let domain of domains) {
-                domain = domain.toObject({
-                    versionKey: false,
-                });
-                delete domain.__v;
-                delete domain._id;
-            }
             res.status(200).json({
                 success: true,
                 domains,

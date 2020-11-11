@@ -16,7 +16,7 @@ const port = process.env.PORT || 3000;
 
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL,
 }));
 app.disable('x-powered-by');
 app.use(json());
@@ -36,6 +36,6 @@ app.listen(port, () => {
         useNewUrlParser: true,
         useUnifiedTopology: true,
     }, () => {
-        console.log('Connected to the database.');
+        console.log('Connected to the database');
     });
 });
