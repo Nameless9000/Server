@@ -3,6 +3,7 @@ import AdminMiddleware from '../middlewares/AdminMiddleware';
 import JoiMiddleware from '../middlewares/JoiMiddleware';
 import Domains from '../models/DomainModel';
 import DomainSchema from '../schemas/DomainSchema';
+import { logDomain } from '../utils/LoggingUtil';
 const router = Router();
 
 router.get('/', async (req: Request, res: Response) => {
@@ -36,7 +37,8 @@ router.post('/', AdminMiddleware, JoiMiddleware(DomainSchema, 'body'), async (re
         donated: donated ? donated : false,
         donatedBy: donatedBy ? donatedBy : 'N/A',
         dateAdded: new Date().toLocaleDateString(),
-    }).then(() => {
+    }).then((domain) => {
+        logDomain(domain);
         res.status(200).json({
             success: true,
             message: 'added domain successfully',
