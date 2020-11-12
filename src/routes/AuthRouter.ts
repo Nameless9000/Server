@@ -107,14 +107,14 @@ router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Requ
             showLink: false,
             invisibleUrl: false,
             domain: {
-                name: 'astral.cool',
+                name: 'i.astral.cool',
                 subdomain: null,
             },
             embed: {
                 enabled: false,
-                color: null,
-                title: null,
-                description: null,
+                color: '#2b95cf',
+                title: 'default',
+                description: 'default',
             },
         },
     }).then((user) => {
