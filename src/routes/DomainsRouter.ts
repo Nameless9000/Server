@@ -7,7 +7,7 @@ import { addDomain } from '../utils/CloudflareUtil';
 import { logDomain } from '../utils/LoggingUtil';
 const router = Router();
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
     await Domains.find({})
         .then((domains) => {
             res.status(200).json({
