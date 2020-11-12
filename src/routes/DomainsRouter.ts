@@ -90,4 +90,15 @@ router.get('/count', async (req: Request, res: Response) => {
     }
 });
 
+router.get('/list', async (_req: Request, res: Response) => {
+    const domainsArray = [];
+    const domains = await Domains.find({});
+
+    for (const domain of domains) {
+        domainsArray.push(domain.name);
+    }
+
+    res.status(200).json(domainsArray);
+});
+
 export default router;
