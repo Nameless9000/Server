@@ -3,6 +3,7 @@ import AdminMiddleware from '../middlewares/AdminMiddleware';
 import JoiMiddleware from '../middlewares/JoiMiddleware';
 import Domains from '../models/DomainModel';
 import DomainSchema from '../schemas/DomainSchema';
+import { addDomain } from '../utils/CloudflareUtil';
 import { logDomain } from '../utils/LoggingUtil';
 const router = Router();
 
@@ -21,27 +22,35 @@ router.post('/', AdminMiddleware, JoiMiddleware(DomainSchema, 'body'), async (re
 
     if (await Domains.findOne({ name })) return res.status(400).json({
         success: false,
-        error: 'this domain alraedy exists',
+        error: 'this domain already exists',
     });
 
-    await Domains.create({
-        name,
-        wildcard,
-        donated: donated ? donated : false,
-        donatedBy: donatedBy ? donatedBy : 'N/A',
-        dateAdded: new Date().toLocaleDateString(),
-    }).then((domain) => {
-        logDomain(domain);
-        res.status(200).json({
-            success: true,
-            message: 'added domain successfully',
+    await addDomain(name)
+        .then(async () => {
+            await Domains.create({
+                name,
+                wildcard,
+                donated: donated ? donated : false,
+                donatedBy: donatedBy ? donatedBy : 'N/A',
+                dateAdded: new Date().toLocaleDateString(),
+            }).then(async (domain) => {
+                logDomain(domain);
+                res.status(200).json({
+                    success: true,
+                    message: 'added domain successfully',
+                });
+            }).catch((err) => {
+                res.status(500).json({
+                    success: false,
+                    error: err.message,
+                });
+            });
+        }).catch((err) => {
+            res.status(500).json({
+                success: false,
+                error: err.message,
+            });
         });
-    }).catch((err) => {
-        res.status(500).json({
-            success: false,
-            error: err.message,
-        });
-    });
 });
 
 router.delete('/:id', AdminMiddleware, async (req: Request, res: Response) => {

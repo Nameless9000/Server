@@ -7,7 +7,7 @@ import { Domain } from '../models/DomainModel';
  */
 async function logDomain(domain: Domain) {
     await Axios.post(process.env.WEBHOOK_URL, {
-        content: `A new domain has been added.\n\n\`${domain.name}\``,
+        content: `A new domain has been added, DNS records have automatically been added.\n\n\`${domain.name}\``,
     });
 };
 
