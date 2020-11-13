@@ -2,16 +2,19 @@ import { Request, Response, Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { generateString } from '../utils/GenerateUtil';
 import { hash, verify } from 'argon2';
-import { sendVerificationEmail } from '../utils/MailUtil';
+import { sendPasswordReset, sendVerificationEmail } from '../utils/MailUtil';
 import { oAuth } from '../utils/oAuth2Util';
 import { sign } from 'jsonwebtoken';
 import JoiMiddleware from '../middlewares/JoiMiddleware';
 import RegisterSchema from '../schemas/RegisterSchema';
-import Users from '../models/UserModel';
+import Users, { User } from '../models/UserModel';
 import Invites from '../models/InviteModel';
 import VerifySchema from '../schemas/VerifySchema';
 import LoginSchema from '../schemas/LoginSchema';
 import CallbackSchema from '../schemas/CallbackSchema';
+import PasswordConfirmationSchema from '../schemas/PasswordConfirmationSchema';
+import PasswordResets, { ResetPassword } from '../models/ResetPasswordModel';
+import ResetPasswordSchema from '../schemas/ResetPasswordSchema';
 const router = Router();
 
 router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Request, res: Response) => {
@@ -217,6 +220,110 @@ router.post('/login', JoiMiddleware(LoginSchema, 'body'), async (req: Request, r
         success: true,
         message: 'logged in',
     });
+});
+
+router.post('/sendpasswordreset', JoiMiddleware(PasswordConfirmationSchema, 'body'), async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    let user: ResetPassword | User = await PasswordResets.findOne({ email });
+
+    if (user) return res.status(400).json({
+        success: false,
+        erorr: 'you already have a password reset ongoing',
+    });
+
+    user = await Users.findOne({ email });
+
+    const resetKey = generateString(40);
+    if (user) sendPasswordReset(user, resetKey)
+        .then(async () => {
+            await PasswordResets.create({
+                _id: resetKey,
+                user: user._id,
+                email,
+            });
+        }).catch((err) => {
+            res.status(500).json({
+                success: false,
+                error: err.message,
+            });
+        });
+
+    res.status(200).json({
+        success: true,
+        message: 'if the email exists in our database, we\'ve sent a password reset email',
+    });
+});
+
+router.get('/passwordresets/:key', async (req: Request, res: Response) => {
+    let key: string | ResetPassword = req.params.key as string;
+
+    if (!key) return res.status(400).json({
+        success: false,
+        error: 'provide a key',
+    });
+
+    key = await PasswordResets.findOne({ _id: key });
+
+    if (!key) return res.status(404).json({
+        success: false,
+        error: 'invalid key',
+    });
+
+    res.status(200).json({
+        success: true,
+        message: 'valid key',
+    });
+});
+
+router.post('/resetpassword', JoiMiddleware(ResetPasswordSchema, 'body'), async (req: Request, res: Response) => {
+    let { user } = req;
+    const { key, password, confirmPassword } = req.body;
+    const reset = await PasswordResets.findOne({ _id: key });
+
+    if (user) return res.status(400).json({
+        success: false,
+        error: 'you are already logged in',
+    });
+
+    if (!reset) return res.status(404).json({
+        success: false,
+        error: 'invalid key',
+    });
+
+    user = await Users.findOne({ _id: reset.user });
+
+    if (!user) {
+        res.status(404).json({
+            success: false,
+            error: 'the user attached to this password reset does not exist',
+        });
+        await reset.remove();
+        return;
+    }
+
+    if (password !== confirmPassword) return res.status(400).json({
+        success: false,
+        error: 'confirmation must match password',
+    });
+
+    try {
+        await Users.updateOne({ _id: user._id }, {
+            password: await hash(password),
+        });
+
+        await reset.remove();
+
+        res.status(200).json({
+            success: true,
+            message: 'reset password successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: true,
+            error: err.message,
+        });
+    }
 });
 
 router.get('/logout', (req: Request, res: Response) => {
