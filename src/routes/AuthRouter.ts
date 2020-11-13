@@ -306,7 +306,7 @@ router.post('/resetpassword', JoiMiddleware(ResetPasswordSchema, 'body'), async 
         error: 'confirmation must match password',
     });
 
-    if (await hash(password) === user.password) return res.status(400).json({
+    if (await verify(password, user.password)) return res.status(400).json({
         success: false,
         error: 'you must choose a new password',
     });

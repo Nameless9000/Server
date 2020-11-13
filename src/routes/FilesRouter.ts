@@ -189,7 +189,10 @@ router.post('/wipe', async (req: Request, res: Response) => {
     });
 
     await wipeFiles(user)
-        .then(() => {
+        .then(async () => {
+            await Users.updateOne({ _id: user._id }, {
+                uploads: 0,
+            });
             res.status(200).json({
                 success: true,
                 message: 'wiped images successfully',
