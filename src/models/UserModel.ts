@@ -147,6 +147,7 @@ export class User {
             color: string;
             title: string;
             description: string;
+            author: boolean;
         };
     };
 }

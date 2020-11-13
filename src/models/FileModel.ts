@@ -46,6 +46,7 @@ export class File {
         color: string;
         title: string;
         description: string;
+        author: boolean;
     }
 
     /**
