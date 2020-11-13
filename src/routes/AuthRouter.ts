@@ -121,7 +121,6 @@ router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Requ
             },
         },
     }).then((user) => {
-        // set session
         sendVerificationEmail(user)
             .then(async () => {
                 res.status(200).json({
@@ -305,6 +304,11 @@ router.post('/resetpassword', JoiMiddleware(ResetPasswordSchema, 'body'), async 
     if (password !== confirmPassword) return res.status(400).json({
         success: false,
         error: 'confirmation must match password',
+    });
+
+    if (await hash(password) === user.password) return res.status(400).json({
+        success: false,
+        error: 'you must choose a new password',
     });
 
     try {
