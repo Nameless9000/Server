@@ -50,7 +50,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         originalname: file.originalname,
         mimetype: file.mimetype,
         deletionKey,
-        dateUploaded: new Date().toLocaleDateString(),
+        dateUploaded: new Date().toLocaleString(),
         displayType: embed.enabled ? 'embed' : 'raw',
         showLink: req.headers.showlink ? req.headers.showlink === 'true' : user.settings.showLink,
         embed,
