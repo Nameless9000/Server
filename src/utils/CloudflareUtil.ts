@@ -7,7 +7,7 @@ class CloudflareError extends Error {
     }
 }
 
-async function addDomain(domain: string) {
+async function addDomain(domain: string, wildcard: boolean) {
     try {
         const { data } = await Axios.post('https://api.cloudflare.com/client/v4/zones', {
             name: domain,
@@ -38,7 +38,7 @@ async function addDomain(domain: string) {
             },
         });
 
-        await Axios.post(`https://api.cloudflare.com/client/v4/zones/${id}/dns_records`, {
+        if (wildcard) await Axios.post(`https://api.cloudflare.com/client/v4/zones/${id}/dns_records`, {
             type: 'CNAME',
             name: '*',
             content: domain,
@@ -71,7 +71,7 @@ async function addDomain(domain: string) {
             },
         });
     } catch (err) {
-        throw new CloudflareError(err.response.data.errors[0].message);
+        throw new CloudflareError(err.response.data.errors[0].message || err.response.data.error);
     }
 }
 

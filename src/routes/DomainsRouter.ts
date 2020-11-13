@@ -25,7 +25,7 @@ router.post('/', AdminMiddleware, JoiMiddleware(DomainSchema, 'body'), async (re
         error: 'this domain already exists',
     });
 
-    await addDomain(name)
+    await addDomain(name, wildcard)
         .then(async () => {
             await Domains.create({
                 name,
