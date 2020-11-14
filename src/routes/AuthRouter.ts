@@ -439,7 +439,7 @@ router.get('/discord/callback', JoiMiddleware(CallbackSchema, 'query'), async (r
             avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
         },
     }).then(() => {
-        res.redirect('http://localhost:3000/dashboard');
+        res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     }).catch((err) => {
         res.status(500).json({
             success: false,
