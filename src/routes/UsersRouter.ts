@@ -246,7 +246,7 @@ router.put('/@me/settings', JoiMiddleware(SettingsSchema, 'body'), async (req: R
 
 router.put('/@me/embed', JoiMiddleware(EmbedSchema, 'body'), async (req: Request, res: Response) => {
     let { user } = req;
-    const { title, description, color } = req.body;
+    const { title, description, color, author, randomColor } = req.body;
 
     if (!user) return res.status(401).json({
         success: false,
@@ -279,6 +279,8 @@ router.put('/@me/embed', JoiMiddleware(EmbedSchema, 'body'), async (req: Request
                     title,
                     description,
                     color,
+                    author,
+                    randomColor,
                 },
             },
         });
