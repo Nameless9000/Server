@@ -332,7 +332,7 @@ router.post('/@me/disable', async (req: Request, res: Response) => {
     } catch (err) {
         res.status(500).json({
             success: false,
-            erorr: err.message,
+            error: err.message,
         });
     }
 });
@@ -365,7 +365,7 @@ router.put('/testimonial', JoiMiddleware(TestimonialSchema, 'body'), async (req:
     }).catch((err) => {
         res.status(500).json({
             success: false,
-            erorr: err.message,
+            error: err.message,
         });
     });
 });

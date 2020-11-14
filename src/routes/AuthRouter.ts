@@ -229,7 +229,7 @@ router.post('/sendpasswordreset', JoiMiddleware(PasswordConfirmationSchema, 'bod
 
     if (user) return res.status(400).json({
         success: false,
-        erorr: 'you already have a password reset ongoing',
+        error: 'you already have a password reset ongoing',
     });
 
     user = await Users.findOne({ email });
@@ -307,7 +307,7 @@ router.post('/resetpassword', JoiMiddleware(ResetPasswordSchema, 'body'), async 
         error: 'confirmation must match password',
     });
 
-    if (await verify(password, user.password)) return res.status(400).json({
+    if (await verify(user.password, password)) return res.status(400).json({
         success: false,
         error: 'you must choose a new password',
     });
@@ -354,7 +354,7 @@ router.get('/login/discord', (req: Request, res: Response) => {
 router.get('/login/discord/callback', async (req: Request, res: Response) => {
     if (req.user) return res.status(400).json({
         success: false,
-        erorr: 'you are already logged in',
+        error: 'you are already logged in',
     });
 
     const code = req.query.code as string;
