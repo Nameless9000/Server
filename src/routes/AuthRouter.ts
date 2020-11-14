@@ -119,6 +119,7 @@ router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Requ
                 title: 'default',
                 description: 'default',
                 author: true,
+                randomColor: false,
             },
         },
     }).then((user) => {

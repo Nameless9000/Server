@@ -148,6 +148,7 @@ export class User {
             title: string;
             description: string;
             author: boolean;
+            randomColor: boolean;
         };
     };
 }
