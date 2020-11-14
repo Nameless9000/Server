@@ -39,12 +39,20 @@ router.get('/@me', async (req: Request, res: Response) => {
         error: 'unauthorized',
     });
 
-    const user = await Users.findOne({ _id: req.user._id });
+    let user = await Users.findOne({ _id: req.user._id });
 
     if (!user) return res.status(401).json({
         success: false,
         error: 'unauthorized',
     });
+
+    if (user.blacklisted.status) return res.status(401).json({
+        success: false,
+        error: `you are blacklisted for ${user.blacklisted.reason}`,
+    });
+
+    user = user.toObject();
+    delete user.password;
 
     res.status(200).json(user);
 });
