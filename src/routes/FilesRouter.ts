@@ -114,6 +114,9 @@ router.get('/delete', JoiMiddleware(DeletionSchema, 'query'), async (req: Reques
 
     await s3.deleteObject(params).promise()
         .then(async () => {
+            await Users.updateOne({ _id: file.uploader.uid }, {
+                $inc: { uploads: -1 },
+            });
             await file.remove();
             res.status(200).json({
                 success: true,
@@ -162,6 +165,9 @@ router.delete('/:file', async (req: Request, res: Response) => {
 
     try {
         await s3.deleteObject(params).promise();
+        await Users.updateOne({ _id: file.uploader.uid }, {
+            $inc: { uploads: -1 },
+        });
         await file.remove();
 
         res.status(200).json({
