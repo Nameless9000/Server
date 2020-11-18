@@ -17,6 +17,17 @@ router.get('/', async (_req: Request, res: Response) => {
         });
 });
 
+router.get('/list', async (req: Request, res: Response) => {
+    await Domains.find({})
+        .then((domains) => {
+            const domainNames = [];
+            for (const domain of domains) {
+                domainNames.push(domain.name);
+            }
+            res.status(200).json(domainNames);
+        });
+});
+
 router.post('/', AdminMiddleware, JoiMiddleware(DomainSchema, 'body'), async (req: Request, res: Response) => {
     const { name, wildcard, donated, donatedBy } = req.body;
 
