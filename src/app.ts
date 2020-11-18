@@ -11,6 +11,7 @@ import SessionMiddleware from './middlewares/SessionMiddleware';
 import express, { json } from 'express';
 import { connect } from 'mongoose';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -20,6 +21,7 @@ app.use(cors({
 }));
 app.disable('x-powered-by');
 app.use(json());
+app.use(cookieParser());
 app.use(SessionMiddleware);
 
 app.use('/files', FilesRouter);
