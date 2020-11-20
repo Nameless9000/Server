@@ -21,7 +21,7 @@ function generateShortUrl(): string {
     for (let i = 0; i < 25; i++) {
         url += invisibleCharacters.charAt(Math.floor(Math.random() * invisibleCharacters.length));
     }
-    return url;
+    return url + '\u200B';
 }
 
 /**
