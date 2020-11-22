@@ -16,6 +16,30 @@ const filter = new Filter({
 });
 const router = Router();
 
+router.get('/', async (req: Request, res: Response) => {
+    let { user } = req;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    user = await Users.findOne({ _id: user._id });
+
+    if (!user || !user.roles.includes('admin')) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    const users = await Users.find({})
+        .select('-password -createdInvites -invitedUsers');
+
+    res.status(200).json({
+        success: true,
+        users,
+    });
+});
+
 router.get('/count', async (req: Request, res: Response) => {
     try {
         const total = await Users.countDocuments();

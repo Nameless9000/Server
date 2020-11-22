@@ -7,13 +7,14 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 router.get('/testimonial', async (req: Request, res: Response) => {
-    const User = await Users.aggregate([{ $sample: { size: 1 } }]);
+    const users = await Users.find({ testimonial: { $ne: null } });
+    const user = users[Math.floor(Math.random() * users.length)];
 
     res.status(200).json({
         success: true,
         testimonial: {
-            user: User[0].username,
-            data: User[0].testimonial,
+            user: user.username,
+            data: user.testimonial,
         },
     });
 });
