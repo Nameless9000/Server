@@ -11,6 +11,7 @@ import InvisibleUrl from '../models/InvisibleUrlModel';
 import JoiMiddleware from '../middlewares/JoiMiddleware';
 import DeletionSchema from '../schemas/DeletionSchema';
 import ConfigSchema from '../schemas/ConfigSchema';
+import { formatFilesize } from '../utils/FormatUtil';
 const router = Router();
 
 const upload: Multer = multer({
@@ -49,6 +50,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         filename: file.filename,
         originalname: file.originalname,
         mimetype: file.mimetype,
+        size: formatFilesize(file.size),
         deletionKey,
         dateUploaded: new Date().toLocaleString(),
         displayType: embed.enabled ? 'embed' : 'raw',

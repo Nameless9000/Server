@@ -21,6 +21,12 @@ export class File {
     mimetype: string;
 
     /**
+     * The file size.
+     */
+    @prop()
+    size: string;
+
+    /**
      * The date the file was uploaded.
      */
     @prop()
