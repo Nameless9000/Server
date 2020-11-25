@@ -1,12 +1,17 @@
 import Axios from 'axios';
 
 class CloudflareError extends Error {
-    constructor(message) {
+    constructor(message: string) {
         super(message);
         this.name = 'CloudflareError';
     }
 }
 
+/**
+ * Add a domain to cloudflare.
+ * @param {string} domain The domain name.
+ * @param {boolean} wildcard Whether or not the domain is wildcarded.
+ */
 async function addDomain(domain: string, wildcard: boolean) {
     try {
         const { data } = await Axios.post('https://api.cloudflare.com/client/v4/zones', {

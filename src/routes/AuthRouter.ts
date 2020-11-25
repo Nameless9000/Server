@@ -63,7 +63,7 @@ router.post('/register', JoiMiddleware(RegisterSchema, 'body'), async (req: Requ
 
     let invitedBy = 'Unknown';
 
-    if (queriedInvite.createdBy !== 'Unknown') {
+    if (queriedInvite.createdBy !== 'Admin') {
         const inviter = await Users.findOne({ _id: queriedInvite.createdBy });
 
         if (inviter) {
