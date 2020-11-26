@@ -27,6 +27,12 @@ export class File {
     size: string;
 
     /**
+     * The domain the file is being served on.
+     */
+    @prop()
+    domain: string;
+
+    /**
      * The date the file was uploaded.
      */
     @prop()
