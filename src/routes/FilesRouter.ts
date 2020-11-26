@@ -51,6 +51,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         originalname: file.originalname,
         mimetype: file.mimetype,
         size: formatFilesize(file.size),
+        domain: `${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`,
         deletionKey,
         dateUploaded: new Date().toLocaleString(),
         displayType: embed.enabled ? 'embed' : 'raw',
