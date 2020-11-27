@@ -46,12 +46,17 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
     const { embed } = user.settings;
     const { domain } = user.settings;
 
+    let baseUrl = `${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`;
+    if (req.headers.domain) baseUrl = `${req.headers.domain}`;
+    if (req.headers.randomdomain ? req.headers.randomdomain === 'true' : user.settings.randomDomain.enabled)
+        baseUrl = `${user.settings.randomDomain.domains[Math.floor(Math.random() * user.settings.randomDomain.domains.length)] || 'i.astral.cool'}`;
+
     await Files.create({
         filename: file.filename,
         originalname: file.originalname,
         mimetype: file.mimetype,
         size: formatFilesize(file.size),
-        domain: `${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`,
+        domain: baseUrl,
         deletionKey,
         dateUploaded: new Date().toLocaleString(),
         displayType: embed.enabled ? 'embed' : 'raw',
@@ -69,13 +74,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         $inc: { uploads: +1 },
     });
 
-    let baseUrl = `https://${domain.subdomain !== '' && domain.subdomain !== null ? domain.subdomain + '.' : ''}${domain.name}`;
-
-    if (req.headers.domain) baseUrl = `https://${req.headers.domain}`;
-    if (req.headers.randomdomain ? req.headers.randomdomain === 'true' : user.settings.randomDomain.enabled)
-        baseUrl = `https://${user.settings.randomDomain.domains[Math.floor(Math.random() * user.settings.randomDomain.domains.length)] || 'astral.cool'}`;
-
-    let imageUrl = `${baseUrl}/${file.filename}`;
+    let imageUrl = `https://${baseUrl}/${file.filename}`;
 
     if (req.headers.invisiblelink ? req.headers.invisiblelink === 'true' : user.settings.invisibleUrl) {
         const shortUrlId = generateShortUrl();
@@ -84,7 +83,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
             filename: file.filename,
             uid: user._id,
         });
-        imageUrl = `${baseUrl}/${shortUrlId}`;
+        imageUrl = `https://${baseUrl}/${shortUrlId}`;
     }
 
     res.status(200).json({
