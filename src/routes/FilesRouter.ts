@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { upload } from '../utils/MulterUtil';
+import { s3, wipeFiles } from '../utils/S3Util';
 import { formatFilesize } from '../utils/FormatUtil';
 import { generateString, generateInvisibleId } from '../utils/GenerateUtil';
 import UploadMiddleware from '../middlewares/UploadMiddleware';
@@ -8,7 +9,6 @@ import UserModel from '../models/UserModel';
 import InvisibleUrlModel from '../models/InvisibleUrlModel';
 import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import DeletionSchema from '../schemas/DeletionSchema';
-import { s3 } from '../utils/S3Util';
 const router = Router();
 
 router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, res: Response) => {
@@ -103,6 +103,60 @@ router.delete('/delete', ValidationMiddleware(DeletionSchema, 'query'), async (r
         res.status(200).json({
             success: true,
             message: 'deleted file successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.post('/wipe', async (req: Request, res: Response) => {
+    let { user } = req;
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    user = await UserModel.findById(user._id);
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    try {
+        await wipeFiles(user);
+
+        await FileModel.deleteMany({
+            'uploader.uuid': user._id,
+        });
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            uploads: 0,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'wiped images successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.get('/count', async (_req: Request, res: Response) => {
+    try {
+        const total = await FileModel.countDocuments();
+
+        res.status(200).json({
+            success: true,
+            total,
         });
     } catch (err) {
         res.status(500).json({
