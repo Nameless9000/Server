@@ -6,6 +6,9 @@ import UploadMiddleware from '../middlewares/UploadMiddleware';
 import FileModel from '../models/FileModel';
 import UserModel from '../models/UserModel';
 import InvisibleUrlModel from '../models/InvisibleUrlModel';
+import ValidationMiddleware from '../middlewares/ValidationMiddleware';
+import DeletionSchema from '../schemas/DeletionSchema';
+import { s3 } from '../utils/S3Util';
 const router = Router();
 
 router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, res: Response) => {
@@ -68,6 +71,45 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         imageUrl,
         deletionUrl,
     });
+});
+
+router.delete('/delete', ValidationMiddleware(DeletionSchema, 'query'), async (req: Request, res: Response) => {
+    const deletionKey = req.query.key as string;
+    const file = await FileModel.findOne({ deletionKey });
+
+    if (!file) return res.status(404).json({
+        success: false,
+        error: 'invalid deletion key',
+    });
+
+    const user = await UserModel.findById(file.uploader.uuid);
+
+    const params = {
+        Bucket: process.env.S3_BUCKET,
+        Key: `${user._id || file.uploader.uuid}/${file._id}`,
+    };
+
+    try {
+        await s3.deleteObject(params).promise();
+
+        if (user.uploads > 0) await UserModel.findByIdAndUpdate(user._id, {
+            $inc: {
+                uploads: -1,
+            },
+        });
+
+        await file.remove();
+
+        res.status(200).json({
+            success: true,
+            message: 'deleted file successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
 export default router;
