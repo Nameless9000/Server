@@ -11,6 +11,20 @@ function generateString(length: number): string {
         .slice(0, length);
 }
 
+/**
+ * Generate a short url.
+ * @return {string} The short url.
+ */
+function generateInvisibleId(): string {
+    let url = '';
+    const invisibleCharacters = ['\u200B', '\u180E', '\u2060', '\u200C', '\u200D'].join('');
+    for (let i = 0; i < 25; i++) {
+        url += invisibleCharacters.charAt(Math.floor(Math.random() * invisibleCharacters.length));
+    }
+    return url + '\u200B';
+}
+
 export {
-    generateString
+    generateString,
+    generateInvisibleId
 };
