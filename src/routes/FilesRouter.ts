@@ -186,10 +186,12 @@ router.get('/config', ValidationMiddleware(ConfigSchema, 'query'), async (req: R
 router.get('/count', async (_req: Request, res: Response) => {
     try {
         const total = await FileModel.countDocuments();
+        const invisibleUrls = await InvisibleUrlModel.countDocuments();
 
         res.status(200).json({
             success: true,
             total,
+            invisibleUrls,
         });
     } catch (err) {
         res.status(500).json({
