@@ -9,6 +9,7 @@ import UserModel from '../models/UserModel';
 import InvisibleUrlModel from '../models/InvisibleUrlModel';
 import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import DeletionSchema from '../schemas/DeletionSchema';
+import ConfigSchema from '../schemas/ConfigSchema';
 const router = Router();
 
 router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, res: Response) => {
@@ -148,6 +149,33 @@ router.post('/wipe', async (req: Request, res: Response) => {
             error: err.message,
         });
     }
+});
+
+router.get('/config', ValidationMiddleware(ConfigSchema, 'query'), async (req: Request, res: Response) => {
+    const key = req.query.key as string;
+    const user = await UserModel.findOne({ key });
+
+    if (!user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    const config = {
+        Name: 'astral.cool',
+        DestinationType: 'ImageUploader',
+        RequestType: 'POST',
+        RequestURL: `${process.env.BACKEND_URL}/files`,
+        FileFormName: 'file',
+        Body: 'MultipartFormData',
+        Headers: {
+            key,
+        },
+        URL: '$json:imageUrl$',
+        DeletionURL: '$json:deletionUrl$',
+    };
+
+    res.set('Content-Disposition', 'attachment; filename=config.sxcu');
+    res.send(Buffer.from(JSON.stringify(config, null, 2), 'utf8'));
 });
 
 router.get('/count', async (_req: Request, res: Response) => {
