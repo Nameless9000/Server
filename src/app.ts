@@ -10,6 +10,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 try {
+    console.log(new Date().toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+    }));
+
     const errors = [];
     const requiredEnvs = [
         'MONGO_URI',
@@ -49,6 +53,7 @@ try {
     connect(process.env.MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
+        useFindAndModify: false,
     }, () => {
         console.log('Connected to MongoDB cluster');
     });

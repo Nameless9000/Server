@@ -5,7 +5,8 @@ export class File {
     /**
      * The filename.
      */
-    _id: string;
+    @prop()
+    filename: string;
 
     /**
      * The date the file was uploaded.

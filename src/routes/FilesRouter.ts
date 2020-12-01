@@ -37,7 +37,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
     const deletionUrl = `${process.env.BACKEND_URL}/files/delete?key=${deletionKey}`;
 
     await FileModel.create({
-        _id: file.filename,
+        filename: file.filename,
         dateUploaded: new Date().toLocaleString(),
         mimetype: file.mimetype,
         size: formatFilesize(file.size),
@@ -56,6 +56,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         await InvisibleUrlModel.create({
             _id: invisibleUrlId,
             filename: file.filename,
+            uploader: user._id,
         });
 
         imageUrl = `https://${baseUrl}/${invisibleUrlId}`;
@@ -133,6 +134,10 @@ router.post('/wipe', async (req: Request, res: Response) => {
 
         await FileModel.deleteMany({
             'uploader.uuid': user._id,
+        });
+
+        await InvisibleUrlModel.deleteMany({
+            uploader: user._id,
         });
 
         await UserModel.findByIdAndUpdate(user._id, {
