@@ -1,9 +1,9 @@
 import { Request } from 'express';
-import multer, { Multer } from 'multer';
-import MulterS3 from 'multer-s3';
 import { extname } from 'path';
 import { generateString } from './GenerateUtil';
 import { s3 } from './S3Util';
+import multer, { Multer } from 'multer';
+import MulterS3 from 'multer-s3';
 
 /**
  * The Multer configuration.
@@ -18,7 +18,7 @@ const upload: Multer = multer({
             if (!req.user) return;
 
             const { longUrl } = req.user.settings;
-            const filename = (longUrl ? generateString(18): generateString(7)) + extname(file.originalname);
+            const filename = (longUrl ? generateString(17): generateString(7)) + extname(file.originalname);
             file.filename = filename;
 
             cb(null, `${req.user._id}/${filename}`);
