@@ -17,7 +17,8 @@ const upload: Multer = multer({
         key: (req: Request, file: Express.Multer.File, cb) => {
             if (!req.user) return;
 
-            const filename = generateString(10) + extname(file.originalname);
+            const { longUrl } = req.user.settings;
+            const filename = (longUrl ? generateString(18): generateString(7)) + extname(file.originalname);
             file.filename = filename;
 
             cb(null, `${req.user._id}/${filename}`);

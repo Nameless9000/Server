@@ -133,6 +133,7 @@ export class User {
         };
         showLink: boolean;
         invisibleUrl: boolean;
+        longUrl: boolean;
     };
 }
 
