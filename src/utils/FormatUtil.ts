@@ -26,15 +26,34 @@ function formatFilesize(size: number): string {
  */
 function formatEmbed(embed: EmbedInterface, user: User, file: File): EmbedInterface {
     for (const field of ['title', 'description', 'author']) {
-        if (!embed[field]) return;
+        if (embed[field]) {
+            embed[field] = embed[field]
+                .replace('{size}', file.size)
+                .replace('{username}', user.username)
+                .replace('{filename}', file.filename)
+                .replace('{uploads}', user.uploads)
+                .replace('{date}', file.timestamp.toLocaleDateString())
+                .replace('{time}', file.timestamp.toLocaleTimeString())
+                .replace('{timestamp}', file.timestamp.toLocaleString());
 
-        embed[field] = embed[field]
-            .replace('{size}', file.size)
-            .replace('{username}', user.username)
-            .replace('{filename}', file.filename)
-            .replace('{date}', file.timestamp.toLocaleDateString())
-            .replace('{time}', file.timestamp.toLocaleTimeString())
-            .replace('{timestamp}', file.timestamp.toLocaleString());
+            const TIMEZONE_REGEX = /{(time|timestamp):([^}]+)}/i;
+            let match = embed[field].match(TIMEZONE_REGEX);
+
+            while (match) {
+                try {
+                    const formatted = match[1] === 'time' ? file.timestamp.toLocaleTimeString('en-US', {
+                        timeZone: match[2],
+                    }) : file.timestamp.toLocaleString('en-US', {
+                        timeZone: match[2],
+                    });
+
+                    embed[field] = embed[field].replace(match[0], formatted);
+                    match = embed[field].match(TIMEZONE_REGEX);
+                } catch (err) {
+                    break;
+                }
+            }
+        }
     }
 
     if (embed.randomColor)
