@@ -1,10 +1,11 @@
 import 'dotenv/config';
+import {
+    FilesRouter
+} from './routes';
+import { connect } from 'mongoose';
 import express, { json } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { connect } from 'mongoose';
-
-import FilesRouter from './routes/FilesRouter';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
