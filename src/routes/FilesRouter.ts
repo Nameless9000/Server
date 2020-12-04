@@ -1,11 +1,12 @@
 import { Request, Response, Router } from 'express';
 import { upload } from '../utils/MulterUtil';
 import { s3, wipeFiles } from '../utils/S3Util';
-import { formatFilesize } from '../utils/FormatUtil';
+import { formatEmbed, formatFilesize } from '../utils/FormatUtil';
 import { generateString, generateInvisibleId } from '../utils/GenerateUtil';
+import { DocumentType } from '@typegoose/typegoose';
 import UploadMiddleware from '../middlewares/UploadMiddleware';
-import FileModel from '../models/FileModel';
-import UserModel from '../models/UserModel';
+import FileModel, { File } from '../models/FileModel';
+import UserModel, { User } from '../models/UserModel';
 import InvisibleUrlModel from '../models/InvisibleUrlModel';
 import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import DeletionSchema from '../schemas/DeletionSchema';
@@ -13,8 +14,13 @@ import ConfigSchema from '../schemas/ConfigSchema';
 const router = Router();
 
 router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, res: Response) => {
-    const { file } = req;
-    const { user } = req;
+    let {
+        file,
+        user,
+    }: {
+        file: Express.Multer.File | DocumentType<File>,
+        user: User
+    } = req;
 
     if (!file) return res.status(400).json({
         success: false,
@@ -35,10 +41,11 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
 
     const deletionKey = generateString(40);
     const deletionUrl = `${process.env.BACKEND_URL}/files/delete?key=${deletionKey}`;
+    const timestamp = new Date();
 
-    await FileModel.create({
+    file = new FileModel({
         filename: file.filename,
-        dateUploaded: new Date().toLocaleString(),
+        timestamp,
         mimetype: file.mimetype,
         size: formatFilesize(file.size),
         deletionKey,
@@ -49,6 +56,10 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
             username: user.username,
         },
     });
+
+    file.embed = formatEmbed(embed, user, file);
+
+    await file.save();
 
     if (req.headers.invisibleurl ? req.headers.invisibleurl === 'true' : invisibleUrl) {
         const invisibleUrlId = generateInvisibleId();

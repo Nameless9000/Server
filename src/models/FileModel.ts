@@ -9,10 +9,10 @@ export class File {
     filename: string;
 
     /**
-     * The date the file was uploaded.
+     * The timestamp the file was uploaded at.
      */
     @prop()
-    dateUploaded: string;
+    timestamp: Date;
 
     /**
      * The file's mimetype.
