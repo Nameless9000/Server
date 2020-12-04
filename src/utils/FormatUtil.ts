@@ -14,7 +14,7 @@ function formatFilesize(size: number): string {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const int = Math.floor(Math.log(size) / Math.log(1024));
 
-    return (size / Math.pow(1024, int)).toFixed(2) + ' ' + sizes[int];
+    return `${(size / Math.pow(1024, int)).toFixed(2)} ${sizes[int]}`;
 }
 
 /**
