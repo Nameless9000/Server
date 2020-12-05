@@ -11,10 +11,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 try {
-    console.log(new Date().toLocaleString('en-US', {
-        timeZone: 'America/New_York',
-    }));
-
     const errors = [];
     const requiredEnvs = [
         'MONGO_URI',
