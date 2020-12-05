@@ -96,7 +96,7 @@ export class User {
      * The date that the user registered.
      */
     @prop()
-    registrationDate: string;
+    registrationDate: Date;
 
     /**
      * The user's testimonial.

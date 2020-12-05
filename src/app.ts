@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import {
-    FilesRouter
+    FilesRouter, InvitesRouter
 } from './routes';
 import { connect } from 'mongoose';
 import express, { json } from 'express';
@@ -42,6 +42,7 @@ try {
     app.use(cookieParser());
 
     app.use('/files', FilesRouter);
+    app.use('/invites', InvitesRouter);
 
     app.listen(PORT, () => {
         console.log(`Listening to port ${PORT}`);
