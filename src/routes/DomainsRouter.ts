@@ -35,7 +35,7 @@ router.post('/', AdminMiddleware, ValidationMiddleware(DomainSchema), async (req
 
     try {
         for (const field of req.body) {
-            const { name, wildcard, donated, donatedBy } = field;
+            const { name, wildcard, donated, donatedBy, userOnly } = field;
             const domain = await DomainModel.findOne({ name });
 
             if (domain) return res.status(400).json({
@@ -48,8 +48,9 @@ router.post('/', AdminMiddleware, ValidationMiddleware(DomainSchema), async (req
             await DomainModel.create({
                 name,
                 wildcard,
-                donated,
-                donatedBy,
+                donated: donated || false,
+                donatedBy: donatedBy || null,
+                userOnly: userOnly || false,
                 dateAdded: new Date(),
             });
         }

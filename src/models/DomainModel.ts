@@ -21,10 +21,16 @@ export class Domain {
     donated: boolean;
 
     /**
-     * The user who donated the domain.
+     * The uuid of the user who donated the domain.
      */
     @prop()
     donatedBy: string;
+
+    /**
+     * Whether or not the domain is only usable by the donator.
+     */
+    @prop()
+    userOnly: boolean;
 
     /**
      * The date the domain was added.

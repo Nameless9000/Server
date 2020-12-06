@@ -10,4 +10,6 @@ export default array().items(object({
     donated: boolean(),
 
     donatedBy: string(),
+
+    userOnly: boolean(),
 }).options({ abortEarly: false }));

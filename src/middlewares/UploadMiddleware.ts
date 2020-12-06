@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import DomainModel from '../models/DomainModel';
 import UserModel from '../models/UserModel';
 
 export default async (req: Request, res: Response, next: NextFunction) => {
@@ -29,6 +30,13 @@ export default async (req: Request, res: Response, next: NextFunction) => {
     if (!user.discord.id || user.discord.id === '') return res.status(401).json({
         success: false,
         error: 'please link your discord',
+    });
+
+    const domain = await DomainModel.findOne({ name: user.settings.domain.name });
+
+    if (domain.userOnly && domain.donatedBy !== user._id) return res.status(401).json({
+        success: false,
+        error: 'you are not allowed to upload to this domain',
     });
 
     req.user = user;
