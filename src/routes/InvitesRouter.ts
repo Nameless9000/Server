@@ -58,4 +58,26 @@ router.post('/', AuthMiddleware, async (req: Request, res: Response) => {
     });
 });
 
+router.get('/:code', AdminMiddleware, async (req: Request, res: Response) => {
+    const code = req.params.code as string;
+
+    if (!code) return res.status(400).json({
+        success: false,
+        error: 'provide a code',
+    });
+
+    const invite = await InviteModel.findById(code)
+        .select('-__v');
+
+    if (!invite) return res.status(404).json({
+        success: false,
+        error: 'invalid invite code',
+    });
+
+    res.status(200).json({
+        success: true,
+        invite,
+    });
+});
+
 export default router;
