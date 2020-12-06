@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { ObjectSchema } from 'joi';
+import { ArraySchema, ObjectSchema } from 'joi';
 
-export default (schema: ObjectSchema, property: 'body' | 'query' = 'body') => {
+export default (schema: ObjectSchema | ArraySchema, property: 'body' | 'query' = 'body') => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
             await schema.validateAsync(req[property]);

@@ -59,7 +59,7 @@ router.get('/', AdminMiddleware, async (_req: Request, res: Response) => {
 });
 
 router.get('/:code', AdminMiddleware, async (req: Request, res: Response) => {
-    const code = req.params.code as string;
+    const { code } = req.params;
 
     const invite = await InviteModel.findById(code)
         .select('-__v');
@@ -76,7 +76,7 @@ router.get('/:code', AdminMiddleware, async (req: Request, res: Response) => {
 });
 
 router.delete('/:code', AdminMiddleware, async (req: Request, res: Response) => {
-    const code = req.params.code as string;
+    const { code } = req.params;
 
     const invite = await InviteModel.findById(code);
 

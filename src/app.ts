@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import {
-    FilesRouter, InvitesRouter
+    FilesRouter,
+    InvitesRouter,
+    DomainsRouter
 } from './routes';
 import { connect } from 'mongoose';
 import express, { json } from 'express';
@@ -14,12 +16,17 @@ try {
     const errors = [];
     const requiredEnvs = [
         'MONGO_URI',
+        'API_KEY',
         'BACKEND_URL',
         'FRONTEND_URL',
         'S3_SECRET_KEY',
         'S3_ACCESS_KEY_ID',
         'S3_ENDPOINT',
         'S3_BUCKET',
+        'CLOUDFLARE_API_KEY',
+        'CLOUDFLARE_ACCOUNT_ID',
+        'CLOUDFLARE_EMAIL',
+        'WEBHOOK_URL',
     ];
 
     for (const env of requiredEnvs) {
@@ -43,6 +50,7 @@ try {
 
     app.use('/files', FilesRouter);
     app.use('/invites', InvitesRouter);
+    app.use('/domains', DomainsRouter);
 
     app.listen(PORT, () => {
         console.log(`Listening to port ${PORT}`);
