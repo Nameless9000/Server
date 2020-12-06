@@ -178,7 +178,7 @@ router.get('/config', ValidationMiddleware(ConfigSchema, 'query'), async (req: R
 
     const config = {
         Name: 'astral.cool',
-        DestinationType: 'ImageUploader',
+        DestinationType: 'ImageUploader, FileUploader',
         RequestType: 'POST',
         RequestURL: `${process.env.BACKEND_URL}/files`,
         FileFormName: 'file',
