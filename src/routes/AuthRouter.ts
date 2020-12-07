@@ -1,9 +1,11 @@
-import { hash } from 'argon2';
+import { hash, verify } from 'argon2';
 import { Request, Response, Router } from 'express';
+import { sign } from 'jsonwebtoken';
 import { v4 as uuid } from 'uuid';
 import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import InviteModel from '../models/InviteModel';
 import UserModel from '../models/UserModel';
+import LoginSchema from '../schemas/LoginSchema';
 import RegisterSchema from '../schemas/RegisterSchema';
 import { generateString } from '../utils/GenerateUtil';
 import { sendVerificationEmail } from '../utils/MailUtil';
@@ -130,6 +132,44 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
             error: err.message,
         });
     }
+});
+
+router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, res: Response) => {
+    const { username, password }: {
+        username: string;
+        password: string;
+    } = req.body;
+
+    if (req.user) return res.status(400).json({
+        success: false,
+        error: 'you are already logged in',
+    });
+
+    const user = await UserModel.findOne({ username });
+
+    if (!user || !await verify(user.password, password)) return res.status(401).json({
+        success: false,
+        error: 'invalid username or password',
+    });
+
+    if (!user.emailVerified) return res.status(401).json({
+        success: false,
+        error: 'your email is not verified',
+    });
+
+    if (user.blacklisted.status) return res.status(401).json({
+        success: false,
+        error: `you are blacklisted for: ${user.blacklisted.reason}`,
+    });
+
+    const token = sign({ _id: user._id }, process.env.JWT_SECRET);
+
+    res.cookie('jwt', token, { httpOnly: true, secure: true });
+
+    res.status(200).json({
+        success: true,
+        message: 'logged in successfully',
+    });
 });
 
 export default router;
