@@ -30,6 +30,7 @@ try {
         'CLOUDFLARE_EMAIL',
         'WEBHOOK_URL',
         'GSUITE_CLIENT_ID',
+        'JWT_SECRET',
     ];
 
     for (const env of requiredEnvs) {
