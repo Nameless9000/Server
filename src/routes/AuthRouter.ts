@@ -2,14 +2,15 @@ import { hash, verify } from 'argon2';
 import { Request, Response, Router } from 'express';
 import { sign } from 'jsonwebtoken';
 import { v4 as uuid } from 'uuid';
+import { generateString } from '../utils/GenerateUtil';
+import { sendVerificationEmail } from '../utils/MailUtil';
 import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import InviteModel from '../models/InviteModel';
 import UserModel from '../models/UserModel';
 import LoginSchema from '../schemas/LoginSchema';
 import RegisterSchema from '../schemas/RegisterSchema';
 import VerifyEmailSchema from '../schemas/VerifyEmailSchema';
-import { generateString } from '../utils/GenerateUtil';
-import { sendVerificationEmail } from '../utils/MailUtil';
+import DiscordRouter from './DiscordRouter';
 const router = Router();
 
 router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Request, res: Response) => {
@@ -173,6 +174,20 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
     });
 });
 
+router.get('/logout', (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({
+        success: false,
+        error: 'unauthorized',
+    });
+
+    res.clearCookie('jwt');
+
+    res.status(200).json({
+        success: true,
+        message: 'logged out successfully',
+    });
+});
+
 router.get('/verify', ValidationMiddleware(VerifyEmailSchema, 'query'), async (req: Request, res: Response) => {
     const key = req.query.key as string;
     const user = await UserModel.findOne({ emailVerificationKey: key });
@@ -203,5 +218,7 @@ router.get('/verify', ValidationMiddleware(VerifyEmailSchema, 'query'), async (r
         });
     }
 });
+
+router.use('/discord', DiscordRouter);
 
 export default router;

@@ -10,6 +10,7 @@ import { transporter } from './utils/MailUtil';
 import express, { json } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import SessionMiddleware from './middlewares/SessionMiddleware';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +32,10 @@ try {
         'WEBHOOK_URL',
         'GSUITE_CLIENT_ID',
         'JWT_SECRET',
+        'DISCORD_CLIENT_ID',
+        'DISCORD_CLIENT_SECRET',
+        'DISCORD_OAUTH_LOGIN_URL',
+        'DISCORD_LINK_REDIRECT_URI',
     ];
 
     for (const env of requiredEnvs) {
@@ -51,6 +56,7 @@ try {
     app.disable('x-powered-by');
     app.use(json());
     app.use(cookieParser());
+    app.use(SessionMiddleware);
 
     app.use('/files', FilesRouter);
     app.use('/invites', InvitesRouter);
