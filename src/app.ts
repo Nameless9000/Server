@@ -34,8 +34,13 @@ try {
         'JWT_SECRET',
         'DISCORD_CLIENT_ID',
         'DISCORD_CLIENT_SECRET',
-        'DISCORD_OAUTH_LOGIN_URL',
+        'DISCORD_LOGIN_URL',
+        'DISCORD_LINK_URL',
+        'DISCORD_LOGIN_REDIRECT_URI',
         'DISCORD_LINK_REDIRECT_URI',
+        'DISCORD_ROLES',
+        'DISCORD_SERVER_ID',
+        'DISCORD_BOT_TOKEN',
     ];
 
     for (const env of requiredEnvs) {

@@ -2,6 +2,7 @@ import Axios, { Method } from 'axios';
 import { AuthorizationInterface } from './interfaces/AuthorizationInterface';
 import { DiscordUserInterface } from './interfaces/DiscordUserInterface';
 import { stringify } from 'querystring';
+import { User } from '../models/UserModel';
 
 export class OAuth {
     /**
@@ -42,7 +43,9 @@ export class OAuth {
 
             return data;
         } catch (err) {
-            throw new Error(err.response.data.error_description);
+            throw new Error(
+                err.response.data.error_description || err.response.data.message
+            );
         }
     }
 
@@ -72,5 +75,52 @@ export class OAuth {
         });
 
         return this.user;
+    }
+
+    /**
+     * Add a user to the discord server.
+     * @param {User} user The user to add.
+     */
+    addGuildMember = async (user: User): Promise<void> => {
+        const whitelistedRole = process.env.DISCORD_ROLES.split(' ')[1];
+
+        let data: any = JSON.stringify({
+            'access_token': this.authorization.access_token,
+            'roles': process.env.DISCORD_ROLES.split(' '),
+        });
+
+        await this.request(`/guilds/${process.env.DISCORD_SERVER_ID}/members/${this.user.id}`, 'PUT',
+            data, {
+                'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+                'Content-Type': 'application/json',
+                'Content-Length': data.length,
+            }
+        );
+
+        data = JSON.stringify({
+            'access_token': this.authorization.access_token,
+        });
+
+        await this.request(`/guilds/${process.env.DISCORD_SERVER_ID}/members/${this.user.id}/roles/${whitelistedRole}`, 'PUT',
+            data, {
+                'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+            }
+        );
+
+        if (user.discord.id && user.discord.id !== this.user.id) {
+            data = await this.request(`/guilds/${process.env.DISCORD_SERVER_ID}/members/${user.discord.id}`, 'GET', null, {
+                'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+                'Content-Type': 'application/json',
+            });
+
+            if (data.roles.includes(whitelistedRole)) await this.request(
+                `/guilds/${process.env.DISCORD_SERVER_ID}/members/${user.discord.id}/roles/${whitelistedRole}`,
+                'DELETE',
+                null, {
+                    'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+                    'Content-Type': 'application/json',
+                }
+            );
+        }
     }
 }
