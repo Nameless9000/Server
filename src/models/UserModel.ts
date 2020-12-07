@@ -9,6 +9,12 @@ export class User {
     _id: string;
 
     /**
+     * The user's uid.
+     */
+    @prop()
+    uid: number;
+
+    /**
      * The user's username.
      */
     @prop()
@@ -19,6 +25,18 @@ export class User {
      */
     @prop()
     password: string;
+
+    /**
+     * The user's invite code.
+     */
+    @prop()
+    invite: string;
+
+    /**
+     * The user's upload key.
+     */
+    @prop()
+    key: string;
 
     /**
      * The user's email.
@@ -37,18 +55,6 @@ export class User {
      */
     @prop()
     emailVerificationKey: string;
-
-    /**
-     * The user's invite code.
-     */
-    @prop()
-    invite: string;
-
-    /**
-     * The user's upload key.
-     */
-    @prop()
-    key: string;
 
     /**
      * The user's discord id and avatar.

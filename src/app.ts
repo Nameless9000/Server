@@ -2,12 +2,14 @@ import 'dotenv/config';
 import {
     FilesRouter,
     InvitesRouter,
-    DomainsRouter
+    DomainsRouter,
+    AuthRouter
 } from './routes';
 import { connect } from 'mongoose';
+import { transporter } from './utils/MailUtil';
 import express, { json } from 'express';
-import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +29,7 @@ try {
         'CLOUDFLARE_ACCOUNT_ID',
         'CLOUDFLARE_EMAIL',
         'WEBHOOK_URL',
+        'GSUITE_CLIENT_ID',
     ];
 
     for (const env of requiredEnvs) {
@@ -51,6 +54,7 @@ try {
     app.use('/files', FilesRouter);
     app.use('/invites', InvitesRouter);
     app.use('/domains', DomainsRouter);
+    app.use('/auth', AuthRouter);
 
     app.listen(PORT, () => {
         console.log(`Listening to port ${PORT}`);
@@ -63,6 +67,8 @@ try {
     }, () => {
         console.log('Connected to MongoDB cluster');
     });
+
+    (async () => await transporter.verify())();
 } catch (err) {
     throw new Error(err);
 }
