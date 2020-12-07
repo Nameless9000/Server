@@ -7,6 +7,7 @@ import InviteModel from '../models/InviteModel';
 import UserModel from '../models/UserModel';
 import LoginSchema from '../schemas/LoginSchema';
 import RegisterSchema from '../schemas/RegisterSchema';
+import VerifyEmailSchema from '../schemas/VerifyEmailSchema';
 import { generateString } from '../utils/GenerateUtil';
 import { sendVerificationEmail } from '../utils/MailUtil';
 const router = Router();
@@ -170,6 +171,37 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
         success: true,
         message: 'logged in successfully',
     });
+});
+
+router.get('/verify', ValidationMiddleware(VerifyEmailSchema, 'query'), async (req: Request, res: Response) => {
+    const key = req.query.key as string;
+    const user = await UserModel.findOne({ emailVerificationKey: key });
+
+    if (!user) return res.status(404).json({
+        success: false,
+        error: 'invalid verification key',
+    });
+
+    if (user.emailVerified) return res.status(400).json({
+        success: false,
+        error: 'your email is already verified',
+    });
+
+    try {
+        await UserModel.findByIdAndUpdate(user._id, {
+            emailVerified: true,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'verified email successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
 export default router;
