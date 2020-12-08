@@ -13,6 +13,24 @@ import DeletionSchema from '../schemas/DeletionSchema';
 import ConfigSchema from '../schemas/ConfigSchema';
 const router = Router();
 
+router.get('/', async (_req: Request, res: Response) => {
+    try {
+        const total = await FileModel.countDocuments();
+        const invisibleUrls = await InvisibleUrlModel.countDocuments();
+
+        res.status(200).json({
+            success: true,
+            total,
+            invisibleUrls,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
 router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, res: Response) => {
     let {
         file,
@@ -192,24 +210,6 @@ router.get('/config', ValidationMiddleware(ConfigSchema, 'query'), async (req: R
 
     res.set('Content-Disposition', 'attachment; filename=config.sxcu');
     res.send(Buffer.from(JSON.stringify(config, null, 2), 'utf8'));
-});
-
-router.get('/count', async (_req: Request, res: Response) => {
-    try {
-        const total = await FileModel.countDocuments();
-        const invisibleUrls = await InvisibleUrlModel.countDocuments();
-
-        res.status(200).json({
-            success: true,
-            total,
-            invisibleUrls,
-        });
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            error: err.message,
-        });
-    }
 });
 
 export default router;

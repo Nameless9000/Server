@@ -3,7 +3,9 @@ import {
     FilesRouter,
     InvitesRouter,
     DomainsRouter,
-    AuthRouter
+    AuthRouter,
+    BaseRouter,
+    UsersRouter
 } from './routes';
 import { connect } from 'mongoose';
 import { transporter } from './utils/MailUtil';
@@ -63,10 +65,19 @@ try {
     app.use(cookieParser());
     app.use(SessionMiddleware);
 
+    app.use('/', BaseRouter);
     app.use('/files', FilesRouter);
     app.use('/invites', InvitesRouter);
     app.use('/domains', DomainsRouter);
     app.use('/auth', AuthRouter);
+    app.use('/users', UsersRouter);
+
+    app.use((req, res) => {
+        res.status(404).json({
+            success: false,
+            error: 'invalid page',
+        });
+    });
 
     app.listen(PORT, () => {
         console.log(`Listening to port ${PORT}`);
