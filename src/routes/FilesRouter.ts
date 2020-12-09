@@ -11,6 +11,7 @@ import InvisibleUrlModel from '../models/InvisibleUrlModel';
 import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import DeletionSchema from '../schemas/DeletionSchema';
 import ConfigSchema from '../schemas/ConfigSchema';
+import AuthMiddleware from '../middlewares/AuthMiddleware';
 const router = Router();
 
 router.get('/', async (_req: Request, res: Response) => {
@@ -143,20 +144,8 @@ router.delete('/delete', ValidationMiddleware(DeletionSchema, 'query'), async (r
     }
 });
 
-router.post('/wipe', async (req: Request, res: Response) => {
-    let { user } = req;
-
-    if (!user) return res.status(401).json({
-        success: false,
-        error: 'unauthorized',
-    });
-
-    user = await UserModel.findById(user._id);
-
-    if (!user) return res.status(401).json({
-        success: false,
-        error: 'unauthorized',
-    });
+router.post('/wipe', AuthMiddleware, async (req: Request, res: Response) => {
+    const { user } = req;
 
     try {
         await wipeFiles(user);

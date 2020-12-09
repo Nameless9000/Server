@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { sign } from 'jsonwebtoken';
-import OAuthMiddleware from '../middlewares/OAuthMiddleware';
-import UserModel from '../models/UserModel';
+import OAuthMiddleware from '../../middlewares/OAuthMiddleware';
+import UserModel from '../../models/UserModel';
 const router = Router();
 
 router.get('/login', (req: Request, res: Response) => {

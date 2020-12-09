@@ -1,8 +1,10 @@
 import { Request, Response, Router } from 'express';
 import AdminMiddleware from '../../middlewares/AdminMiddleware';
 import UserModel from '../../models/UserModel';
-import MeRouter from './@me';
+import MeRouter from './MeRouter';
 const router = Router();
+
+router.use('/@me', MeRouter);
 
 router.get('/', async (_req: Request, res: Response) => {
     try {
@@ -28,12 +30,15 @@ router.get('/:id', AdminMiddleware, async (req: Request, res: Response) => {
     const user = await UserModel.findById(id)
         .select('-__v -password');
 
+    if (!user) return res.status(404).json({
+        success: false,
+        error: 'invalid user',
+    });
+
     res.status(200).json({
         success: true,
         user,
     });
 });
-
-router.use('/@me', MeRouter);
 
 export default router;
