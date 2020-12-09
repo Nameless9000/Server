@@ -3,7 +3,7 @@ import { User } from '../models/UserModel';
 
 const emailAddress = 'no-reply@astral.cool';
 const serviceClient = process.env.GSUITE_CLIENT_ID;
-const privateKey = ;
+const privateKey = '';
 
 /**
  * The nodemailer transporter.
@@ -44,8 +44,30 @@ async function sendVerificationEmail(user: User) {
     }
 }
 
+/**
+ * Send a password reset to someone.
+ * @param {User} user The user to send a reset email to.
+ * @param {string} key The password reset key.
+ */
+async function sendPasswordReset(user: User, key: string) {
+    const html = `<h1>Password Reset</h1>
+    Hello <strong>${user.username}</strong>, you have requested to reset your password, if you did not request this change, please contact an Admin.<br>
+    Please click on the link below to continue the reset process, this link will expire in <strong>10 minutes</strong>.<br>
+    <a href="${process.env.FRONTEND_URL}/resetpassword?key=${key}">Reset your password</a>`;
+
+    const email = {
+        from: emailAddress,
+        to: user.email,
+        subject: 'Password Reset',
+        html,
+    };
+
+    await transporter.sendMail(email);
+}
+
 export {
     transporter,
-    sendVerificationEmail
+    sendVerificationEmail,
+    sendPasswordReset
 };
 

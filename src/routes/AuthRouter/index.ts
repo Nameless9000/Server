@@ -11,7 +11,12 @@ import LoginSchema from '../../schemas/LoginSchema';
 import RegisterSchema from '../../schemas/RegisterSchema';
 import VerifyEmailSchema from '../../schemas/VerifyEmailSchema';
 import DiscordRouter from './DiscordRouter';
+import PasswordResetsRouter from './PasswordResetsRouter';
+import PasswordResetModel from '../../models/PasswordResetModel';
 const router = Router();
+
+router.use('/discord', DiscordRouter);
+router.use('/password_resets', PasswordResetsRouter);
 
 router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Request, res: Response) => {
     let { email, username, password, invite }: {
@@ -165,6 +170,9 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
         error: `you are blacklisted for: ${user.blacklisted.reason}`,
     });
 
+    const passwordReset = await PasswordResetModel.findOne({ user: user._id });
+    if (passwordReset) await passwordReset.remove();
+
     const token = sign({ _id: user._id }, process.env.JWT_SECRET);
 
     res.cookie('jwt', token, { httpOnly: true, secure: true });
@@ -219,7 +227,5 @@ router.get('/verify', ValidationMiddleware(VerifyEmailSchema, 'query'), async (r
         });
     }
 });
-
-router.use('/discord', DiscordRouter);
 
 export default router;
