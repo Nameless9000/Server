@@ -8,7 +8,7 @@ import CloudflareUtil from '../utils/CloudflareUtil';
 import { logDomains } from '../utils/LoggingUtil';
 const router = Router();
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
     try {
         const count = await DomainModel.countDocuments();
         const domains = await DomainModel.find({})

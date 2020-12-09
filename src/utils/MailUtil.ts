@@ -3,7 +3,7 @@ import { User } from '../models/UserModel';
 
 const emailAddress = 'no-reply@astral.cool';
 const serviceClient = process.env.GSUITE_CLIENT_ID;
-const privateKey = '';
+const privateKey = ;
 
 /**
  * The nodemailer transporter.
