@@ -5,7 +5,8 @@ import {
     DomainsRouter,
     AuthRouter,
     BaseRouter,
-    UsersRouter
+    UsersRouter,
+    ShortenerRouter
 } from './routes';
 import { connect } from 'mongoose';
 import { transporter } from './utils/MailUtil';
@@ -71,6 +72,7 @@ try {
     app.use('/domains', DomainsRouter);
     app.use('/auth', AuthRouter);
     app.use('/users', UsersRouter);
+    app.use('/shortener', ShortenerRouter);
 
     app.use((req, res) => {
         res.status(404).json({

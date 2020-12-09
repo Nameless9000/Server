@@ -105,7 +105,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
     });
 });
 
-router.delete('/delete', ValidationMiddleware(DeletionSchema, 'query'), async (req: Request, res: Response) => {
+router.get('/delete', ValidationMiddleware(DeletionSchema, 'query'), async (req: Request, res: Response) => {
     const deletionKey = req.query.key as string;
     const file = await FileModel.findOne({ deletionKey });
 

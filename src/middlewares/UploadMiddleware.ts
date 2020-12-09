@@ -34,7 +34,12 @@ export default async (req: Request, res: Response, next: NextFunction) => {
 
     const domain = await DomainModel.findOne({ name: user.settings.domain.name });
 
-    if (domain.userOnly && domain.donatedBy !== user._id) return res.status(401).json({
+    if (!domain) return res.status(400).json({
+        success: false,
+        erorr: 'invalid domain, change it on the dashboard',
+    });
+
+    if (domain.userOnly && domain.donatedBy && domain.donatedBy !== user._id) return res.status(401).json({
         success: false,
         error: 'you are not allowed to upload to this domain',
     });

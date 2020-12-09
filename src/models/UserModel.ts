@@ -66,6 +66,12 @@ export class User {
     };
 
     /**
+     * The number of strikes the user has.
+     */
+    @prop()
+    strikes: number;
+
+    /**
      * The user's blacklist status and reason.
      */
     @prop()

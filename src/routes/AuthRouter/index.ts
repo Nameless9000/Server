@@ -82,6 +82,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
                 id: null,
                 avatar: null,
             },
+            strikes: 0,
             blacklisted: {
                 status: false,
                 reason: null,

@@ -4,6 +4,7 @@ import DomainsRouter from './DomainsRouter';
 import AuthRouter from './AuthRouter';
 import UsersRouter from './UsersRouter';
 import BaseRouter from './BaseRouter';
+import ShortenerRouter from './ShortenerRouter';
 
 export {
     FilesRouter,
@@ -11,5 +12,6 @@ export {
     DomainsRouter,
     AuthRouter,
     UsersRouter,
-    BaseRouter
+    BaseRouter,
+    ShortenerRouter
 };
