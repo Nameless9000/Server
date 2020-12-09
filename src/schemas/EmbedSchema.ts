@@ -6,15 +6,18 @@ export default object({
 
     title: string()
         .optional()
-        .allow(''),
+        .allow('')
+        .max(200),
 
     description: string()
         .optional()
-        .allow(''),
+        .allow('')
+        .max(2000),
 
     author: string()
         .optional()
-        .allow(''),
+        .allow('')
+        .max(200),
 
     randomColor: boolean()
         .optional(),
