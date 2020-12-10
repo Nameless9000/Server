@@ -111,6 +111,12 @@ export class User {
     registrationDate: Date;
 
     /**
+     * The last time the user logged in.
+     */
+    @prop()
+    lastLogin: Date;
+
+    /**
      * The user's testimonial.
      */
     @prop()

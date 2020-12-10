@@ -97,6 +97,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
             invitedBy,
             invitedUsers: [],
             registrationDate: new Date(),
+            lastLogin: null,
             testimonial: null,
             roles: ['whitelisted'],
             settings: {
@@ -172,6 +173,10 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
 
     const passwordReset = await PasswordResetModel.findOne({ user: user._id });
     if (passwordReset) await passwordReset.remove();
+
+    await UserModel.findByIdAndUpdate(user._id, {
+        lastLogin: new Date(),
+    });
 
     const token = sign({ _id: user._id }, process.env.JWT_SECRET);
 

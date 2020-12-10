@@ -22,6 +22,10 @@ router.get('/login/callback', OAuthMiddleware, async (req: Request, res: Respons
             'discord.avatar': avatar,
         });
 
+        await UserModel.findByIdAndUpdate(user._id, {
+            lastLogin: new Date(),
+        });
+
         const token = sign({ _id: user._id }, process.env.JWT_SECRET);
 
         res.cookie('jwt', token, { httpOnly: true, secure: true });
