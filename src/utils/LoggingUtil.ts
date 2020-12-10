@@ -10,7 +10,7 @@ async function logDomains(domains: Domain[]) {
     const domainList = domains.map((d) => (d.wildcard ? '*.' : '') + d.name).join(',\n');
 
     await Axios.post(process.env.WEBHOOK_URL, {
-        content: `${grammar} been added, DNS records have automatically been updated. \n\n\`\`\`${domainList}\`\`\``,
+        content: `<@&785697322617012235>\n\n${grammar} been added, DNS records have automatically been updated. \n\n\`\`\`${domainList}\`\`\``,
     });
 };
 
