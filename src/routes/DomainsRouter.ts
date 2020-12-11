@@ -82,6 +82,11 @@ router.delete('/:name', AdminMiddleware, async (req: Request, res: Response) => 
         await CloudflareUtil.deleteZone(domain.name);
         await domain.remove();
 
+        await UserModel.updateMany({ 'settings.domain.name': domain.name }, {
+            'settings.domain.name': 'i.astral.cool',
+            'settings.domain.subdomain': null,
+        });
+
         res.status(200).json({
             success: true,
             message: 'deleted domain successfully',
