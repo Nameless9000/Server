@@ -14,7 +14,18 @@ import VerifyEmailSchema from '../../schemas/VerifyEmailSchema';
 import DiscordRouter from './DiscordRouter';
 import PasswordResetsRouter from './PasswordResetsRouter';
 import PasswordResetModel from '../../models/PasswordResetModel';
+import CounterModel from '../../models/CounterModel';
 const router = Router();
+
+async function getNextUid() {
+    const { count } = await CounterModel.findByIdAndUpdate('counter', {
+        $inc: {
+            count: 1,
+        },
+    });
+
+    return count;
+}
 
 router.use('/discord', DiscordRouter);
 router.use('/password_resets', PasswordResetsRouter);
@@ -110,7 +121,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
     try {
         const user = await UserModel.create({
             _id: uuid(),
-            uid: 1,
+            uid: await getNextUid(),
             username,
             password,
             invite,
@@ -157,6 +168,8 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
                 longUrl: false,
             },
         });
+
+        await user.save();
 
         await sendVerificationEmail(user);
 

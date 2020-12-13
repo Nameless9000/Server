@@ -1,7 +1,5 @@
-import { AutoIncrementSimple } from '@typegoose/auto-increment';
-import { prop, getModelForClass, modelOptions, plugin } from '@typegoose/typegoose';
+import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
 
-@plugin(AutoIncrementSimple, [{ field: 'uid' }])
 @modelOptions({ options: { allowMixed: 0 } })
 export class User {
     /**
