@@ -5,9 +5,9 @@ export default (request: string = 'login') => {
     return async (req: Request, res: Response, next: NextFunction) => {
         const { user } = req;
 
-        if (user) return res.status(400).json({
+        if (!user && request === 'link' || (user && request === 'login')) return res.status(400).json({
             success: false,
-            error: 'you are already logged in',
+            error: 'unauthorized',
         });
 
         const { code } = req.query;

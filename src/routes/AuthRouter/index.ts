@@ -31,7 +31,7 @@ router.use('/discord', DiscordRouter);
 router.use('/password_resets', PasswordResetsRouter);
 
 router.post('/token', async (req: Request, res: Response) => {
-    const refreshToken = req.cookies['Refresh-Token'];
+    const refreshToken = req.cookies['x-auth-token'];
 
     if (!refreshToken) return res.status(401).json({
         success: false,
@@ -47,6 +47,10 @@ router.post('/token', async (req: Request, res: Response) => {
         if (!user || token.iat > user.lastLogin.getTime() / 1000) return res.status(401).json({
             success: false,
             error: 'invalid refresh token',
+        });
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            lastLogin: new Date(),
         });
 
         const accessToken = sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
@@ -229,7 +233,7 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
     const accessToken = sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
     const refreshToken = sign({ _id: user._id }, process.env.REFRESH_TOKEN_SECRET);
 
-    res.cookie('Refresh-Token', refreshToken, { httpOnly: true, secure: true });
+    res.cookie('x-auth-token', refreshToken, { httpOnly: true, secure: false });
 
     res.status(200).json({
         success: true,
@@ -239,12 +243,14 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
 });
 
 router.get('/logout', (req: Request, res: Response) => {
-    if (!req.user) return res.status(401).json({
+    const cookie = req.cookies['x-auth-token'];
+
+    if (!cookie) return res.status(401).json({
         success: false,
         error: 'unauthorized',
     });
 
-    res.clearCookie('jwt');
+    res.clearCookie('x-auth-token');
 
     res.status(200).json({
         success: true,
