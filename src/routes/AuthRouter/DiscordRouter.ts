@@ -19,7 +19,7 @@ router.get('/login/callback', OAuthMiddleware(), async (req: Request, res: Respo
         if (!user) return res.status(401).redirect(process.env.FRONTEND_URL);
 
         if (user.discord.avatar !== avatar) await UserModel.findByIdAndUpdate(user._id, {
-            'discord.avatar': avatar,
+            'discord.avatar': `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`,
         });
 
         await UserModel.findByIdAndUpdate(user._id, {
@@ -75,7 +75,7 @@ router.get('/link/callback', OAuthMiddleware('link'), async (req: Request, res: 
         await UserModel.findByIdAndUpdate(user._id, {
             discord: {
                 id,
-                avatar,
+                avatar: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`,
             },
         });
 

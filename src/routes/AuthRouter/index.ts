@@ -201,11 +201,6 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
         password: string;
     } = req.body;
 
-    if (req.user) return res.status(400).json({
-        success: false,
-        error: 'you are already logged in',
-    });
-
     const user = await UserModel.findOne({ username });
 
     if (!user || !(user.password.startsWith('$') ? await verify(user.password, password) : false)) return res.status(401).json({
