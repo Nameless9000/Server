@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { verify } from 'jsonwebtoken';
 
 export default (req: Request, _res: Response, next: NextFunction) => {
-    const jwt = req.cookies.jwt;
+    const jwt = req.cookies['Access-Token'];
 
     if (!jwt) return next();
 

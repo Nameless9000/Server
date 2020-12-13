@@ -18,6 +18,7 @@ const filter = new Filter({
         'prophecy',
         'pxl',
         'pays',
+        'owo',
     ],
 });
 

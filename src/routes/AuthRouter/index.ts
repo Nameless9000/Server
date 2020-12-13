@@ -4,6 +4,7 @@ import { sign } from 'jsonwebtoken';
 import { v4 as uuid } from 'uuid';
 import { generateString } from '../../utils/GenerateUtil';
 import { sendVerificationEmail } from '../../utils/MailUtil';
+import { verify as verifyjwt } from 'jsonwebtoken';
 import ValidationMiddleware from '../../middlewares/ValidationMiddleware';
 import InviteModel from '../../models/InviteModel';
 import UserModel from '../../models/UserModel';
@@ -17,6 +18,40 @@ const router = Router();
 
 router.use('/discord', DiscordRouter);
 router.use('/password_resets', PasswordResetsRouter);
+
+router.post('/token', async (req: Request, res: Response) => {
+    const refreshToken = req.cookies['Refresh-Token'];
+
+    if (!refreshToken) return res.status(401).json({
+        success: false,
+        error: 'provide a refresh token',
+    });
+
+    try {
+        const token: any = verifyjwt(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+        const user = await UserModel.findOne({ _id: token._id })
+            .select('-__v -password');
+
+        if (!user || token.iat > user.lastLogin.getTime() / 1000) return res.status(401).json({
+            success: false,
+            error: 'invalid refresh token',
+        });
+
+        const accessToken = sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+
+        res.status(200).json({
+            success: true,
+            accessToken,
+            user,
+        });
+    } catch (err) {
+        res.status(401).json({
+            success: false,
+            error: 'invalid refresh token',
+        });
+    }
+});
 
 router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Request, res: Response) => {
     let { email, username, password, invite }: {
@@ -156,7 +191,7 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
 
     const user = await UserModel.findOne({ username });
 
-    if (!user || !await verify(user.password, password)) return res.status(401).json({
+    if (!user || !(user.password.startsWith('$') ? await verify(user.password, password) : false)) return res.status(401).json({
         success: false,
         error: 'invalid username or password',
     });
@@ -178,13 +213,15 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
         lastLogin: new Date(),
     });
 
-    const token = sign({ _id: user._id }, process.env.JWT_SECRET);
+    const accessToken = sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+    const refreshToken = sign({ _id: user._id }, process.env.REFRESH_TOKEN_SECRET);
 
-    res.cookie('jwt', token, { httpOnly: true, secure: true });
+    res.cookie('Refresh-Token', refreshToken, { httpOnly: true, secure: true });
 
     res.status(200).json({
         success: true,
-        message: 'logged in successfully',
+        accessToken,
+        user: await UserModel.findById(user._id).select('-__v -password'),
     });
 });
 
