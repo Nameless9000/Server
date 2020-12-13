@@ -10,7 +10,7 @@ router.get('/login', (req: Request, res: Response) => {
         res.redirect(process.env.DISCORD_LOGIN_URL);
 });
 
-router.get('/login/callback', OAuthMiddleware, async (req: Request, res: Response) => {
+router.get('/login/callback', OAuthMiddleware(), async (req: Request, res: Response) => {
     const { id, avatar } = req.discord.user;
 
     try {
@@ -47,7 +47,7 @@ router.get('/link', (req: Request, res: Response) => {
         });
 });
 
-router.get('/link/callback', OAuthMiddleware, async (req: Request, res: Response) => {
+router.get('/link/callback', OAuthMiddleware('link'), async (req: Request, res: Response) => {
     let { user } = req;
 
     if (!user) return res.status(401).json({
@@ -79,10 +79,7 @@ router.get('/link/callback', OAuthMiddleware, async (req: Request, res: Response
             },
         });
 
-        res.status(200).json({
-            success: true,
-            message: 'linked discord successfully',
-        });
+        res.status(200).redirect(`${process.env.FRONTEND_URL}/dashboard`);
     } catch (err) {
         res.status(500).json({
             success: false,
