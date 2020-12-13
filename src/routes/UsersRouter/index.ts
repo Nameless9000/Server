@@ -24,6 +24,17 @@ router.get('/', async (_req: Request, res: Response) => {
     }
 });
 
+router.get('/testimonial', async (req: Request, res: Response) => {
+    const users = await UserModel.find({ testimonial: { $ne: null } });
+    const user = users[Math.floor(Math.random() * users.length)];
+
+    res.status(200).json({
+        success: true,
+        user: user.username,
+        testimonial: user.testimonial,
+    });
+});
+
 router.get('/:id', AdminMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
 
