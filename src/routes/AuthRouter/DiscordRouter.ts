@@ -1,6 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { sign } from 'jsonwebtoken';
 import OAuthMiddleware from '../../middlewares/OAuthMiddleware';
+import PasswordResetModel from '../../models/PasswordResetModel';
 import UserModel from '../../models/UserModel';
 const router = Router();
 
@@ -16,19 +17,23 @@ router.get('/login/callback', OAuthMiddleware(), async (req: Request, res: Respo
     try {
         const user = await UserModel.findOne({ 'discord.id': id });
 
-        if (!user) return res.status(401).redirect(process.env.FRONTEND_URL);
+        if (!user || !user.emailVerified || user.blacklisted.status)
+            return res.status(401).redirect(process.env.FRONTEND_URL);
 
-        if (user.discord.avatar !== avatar) await UserModel.findByIdAndUpdate(user._id, {
-            'discord.avatar': `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`,
-        });
+        const passwordReset = await PasswordResetModel.findOne({ user: user._id });
+        if (passwordReset) await passwordReset.remove();
 
-        await UserModel.findByIdAndUpdate(user._id, {
+        const update = {
             lastLogin: new Date(),
-        });
+        };
 
-        const token = sign({ _id: user._id }, process.env.JWT_SECRET);
+        if (user.discord.avatar !== avatar) update['discord.avatar'] = `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`,
 
-        res.cookie('jwt', token, { httpOnly: true, secure: true });
+        await UserModel.findByIdAndUpdate(user._id, update);
+
+        const refreshToken = sign({ _id: user._id }, process.env.REFRESH_TOKEN_SECRET);
+
+        res.cookie('x-auth-token', refreshToken, { httpOnly: true, secure: false });
         res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     } catch (err) {
         res.status(500).json({
