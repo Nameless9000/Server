@@ -6,6 +6,7 @@ import TestimonialSchema from '../../schemas/TestimonialSchema';
 import Filter from 'bad-words';
 import UserModel from '../../models/UserModel';
 import SettingsRouter from './SettingsRouter';
+import { formatFilesize } from '../../utils/FormatUtil';
 const router = Router();
 
 const filter = new Filter({
@@ -72,8 +73,11 @@ router.get('/images', async (req: Request, res: Response) => {
         objects.Contents.sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime());
 
         const images = [];
+        let storageUsed = 0;
 
         for (const object of objects.Contents) {
+            storageUsed += object.Size;
+
             images.push({
                 link: `https://cdn.astral.cool/${user._id}/${object.Key.split('/')[1]}`,
                 dateUploaded: object.LastModified.toLocaleDateString(),
@@ -84,6 +88,7 @@ router.get('/images', async (req: Request, res: Response) => {
         res.status(200).json({
             success: true,
             images,
+            storageUsed: formatFilesize(storageUsed),
         });
     } catch (err) {
         res.status(500).json({
