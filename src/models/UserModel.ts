@@ -39,6 +39,12 @@ export class User {
     key: string;
 
     /**
+     * The last time the key was regened.
+     */
+    @prop()
+    lastKeyRegen: Date;
+
+    /**
      * The user's email.
      */
     @prop()
