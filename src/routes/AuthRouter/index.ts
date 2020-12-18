@@ -108,7 +108,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
     });
 
     let invitedBy = 'Admin';
-    const inviter = await UserModel.findOne({ username: inviteDoc.createdBy });
+    const inviter = await UserModel.findOne({ _id: inviteDoc.createdBy.uuid });
 
     if (inviter) {
         invitedBy = inviter.username;

@@ -18,7 +18,10 @@ router.post('/', AuthMiddleware, async (req: Request, res: Response) => {
 
     await InviteModel.create({
         _id: invite,
-        createdBy: user.username,
+        createdBy: {
+            username: user.username,
+            uuid: user._id,
+        },
         dateCreated: new Date(),
         dateRedeemed: null,
         usedBy: null,

@@ -12,7 +12,10 @@ export class Invite {
      * The user who created the invite.
      */
     @prop()
-    createdBy: string;
+    createdBy: {
+        username: string;
+        uuid: string;
+    };
 
     /**
      * The date the invite was created.

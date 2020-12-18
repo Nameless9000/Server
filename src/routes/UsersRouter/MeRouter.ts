@@ -8,6 +8,7 @@ import UserModel from '../../models/UserModel';
 import SettingsRouter from './SettingsRouter';
 import { formatFilesize } from '../../utils/FormatUtil';
 import { generateString } from '../../utils/GenerateUtil';
+import InviteModel from '../../models/InviteModel';
 const router = Router();
 
 const filter = new Filter({
@@ -157,6 +158,26 @@ router.post('/regen_key', async (req: Request, res: Response) => {
             success: true,
             key,
             message: 'regenerated key successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.get('/created_invites', async (req: Request, res: Response) => {
+    const { user } = req;
+
+    try {
+        // eslint-disable-next-line quote-props
+        const invites = await InviteModel.find({ 'createdBy.uuid': user._id, useable: true })
+            .select('-__v -createdBy');
+
+        res.status(200).json({
+            success: true,
+            invites,
         });
     } catch (err) {
         res.status(500).json({
