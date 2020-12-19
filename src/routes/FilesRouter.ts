@@ -144,6 +144,45 @@ router.get('/delete', ValidationMiddleware(DeletionSchema, 'query'), async (req:
     }
 });
 
+router.delete('/:id', AuthMiddleware, async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { user } = req;
+
+    const file = await FileModel.findOne({ filename: id });
+
+    if (!file) return res.status(404).json({
+        success: false,
+        error: 'invalid file',
+    });
+
+    const params = {
+        Bucket: process.env.S3_BUCKET,
+        Key: `${user._id || file.uploader.uuid}/${file._id}`,
+    };
+
+    try {
+        await s3.deleteObject(params).promise();
+
+        if (user.uploads > 0) await UserModel.findByIdAndUpdate(user._id, {
+            $inc: {
+                uploads: -1,
+            },
+        });
+
+        await file.remove();
+
+        res.status(200).json({
+            success: true,
+            message: 'deleted file successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
 router.post('/wipe', AuthMiddleware, async (req: Request, res: Response) => {
     const { user } = req;
 

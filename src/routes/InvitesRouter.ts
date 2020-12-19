@@ -15,6 +15,7 @@ router.post('/', AuthMiddleware, async (req: Request, res: Response) => {
     });
 
     const invite = generateInvite();
+    const dateCreated = new Date();
 
     await InviteModel.create({
         _id: invite,
@@ -22,7 +23,7 @@ router.post('/', AuthMiddleware, async (req: Request, res: Response) => {
             username: user.username,
             uuid: user._id,
         },
-        dateCreated: new Date(),
+        dateCreated,
         dateRedeemed: null,
         usedBy: null,
         redeemed: false,
@@ -35,8 +36,9 @@ router.post('/', AuthMiddleware, async (req: Request, res: Response) => {
 
     res.status(200).json({
         success: true,
-        link: `${process.env.FRONTEND_URL}/?code=${invite}`,
+        link: `https://astral.gifts/${invite}`,
         code: invite,
+        dateCreated,
     });
 });
 
