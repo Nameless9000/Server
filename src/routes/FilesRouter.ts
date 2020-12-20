@@ -118,7 +118,7 @@ router.get('/delete', ValidationMiddleware(DeletionSchema, 'query'), async (req:
 
     const params = {
         Bucket: process.env.S3_BUCKET,
-        Key: `${user._id || file.uploader.uuid}/${file._id}`,
+        Key: `${user._id || file.uploader.uuid}/${file.filename}`,
     };
 
     try {
@@ -157,7 +157,7 @@ router.delete('/:id', AuthMiddleware, async (req: Request, res: Response) => {
 
     const params = {
         Bucket: process.env.S3_BUCKET,
-        Key: `${user._id || file.uploader.uuid}/${file._id}`,
+        Key: `${user._id || file.uploader.uuid}/${file.filename}`,
     };
 
     try {
