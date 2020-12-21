@@ -155,6 +155,10 @@ export class User {
             author: string;
             randomColor: boolean;
         };
+        autoWipe: {
+            enabled: boolean;
+            interval: number;
+        };
         showLink: boolean;
         invisibleUrl: boolean;
         longUrl: boolean;

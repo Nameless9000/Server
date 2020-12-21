@@ -168,6 +168,10 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
                     author: username,
                     randomColor: false,
                 },
+                autoWipe: {
+                    enabled: false,
+                    interval: 3600000,
+                },
                 showLink: false,
                 invisibleUrl: false,
                 longUrl: false,

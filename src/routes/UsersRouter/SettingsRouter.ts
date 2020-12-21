@@ -1,4 +1,5 @@
 import { Request, Response, Router } from 'express';
+import ms from 'ms';
 import ValidationMiddleware from '../../middlewares/ValidationMiddleware';
 import DomainModel from '../../models/DomainModel';
 import UserModel from '../../models/UserModel';
@@ -6,6 +7,7 @@ import EmbedSchema from '../../schemas/EmbedSchema';
 import PreferencesSchema from '../../schemas/PreferencesSchema';
 import RandomDomainSchema from '../../schemas/RandomDomainSchema';
 import UpdateDomainSchema from '../../schemas/UpdateDomainSchema';
+import WipeIntervalSchema from '../../schemas/WipeIntervalSchema';
 const router = Router();
 
 router.put('/domain', ValidationMiddleware(UpdateDomainSchema), async (req: Request, res: Response) => {
@@ -20,6 +22,11 @@ router.put('/domain', ValidationMiddleware(UpdateDomainSchema), async (req: Requ
             error: 'invalid domain name',
         });
 
+        if (validDomain.userOnly && validDomain.donatedBy !== user._id) return res.status(400).json({
+            success: false,
+            error: 'you do not have permission to use this domain',
+        });
+
         if (!validDomain.wildcard) subdomain = null;
 
         await UserModel.findByIdAndUpdate(user._id, {
@@ -27,6 +34,11 @@ router.put('/domain', ValidationMiddleware(UpdateDomainSchema), async (req: Requ
                 name: domain,
                 subdomain: subdomain || null,
             },
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'updated domain successfully',
         });
     } catch (err) {
         res.status(500).json({
@@ -99,12 +111,19 @@ router.put('/preferences', ValidationMiddleware(PreferencesSchema), async (req: 
         const toUpdate: any = {};
 
         for (const entry of Object.entries(req.body)) {
-            if (entry[0] === 'randomDomain') {
-                toUpdate['settings.randomDomain.enabled'] = entry[1];
-            } else if (entry[0] === 'embed') {
-                toUpdate['settings.embed.enabled'] = entry[1];
-            } else {
-                toUpdate[`settings.${entry[0]}`] = entry[1];
+            switch (entry[0]) {
+                case 'randomDomain':
+                    toUpdate['settings.randomDomain.enabled'] = entry[1];
+                    break;
+                case 'autoWipe':
+                    toUpdate['settings.autoWipe.enabled'] = entry[1];
+                    break;
+                case 'embeds':
+                    toUpdate['settings.embed.enabled'] = entry[1];
+                    break;
+                default:
+                    toUpdate[`settings.${entry[0]}`] = entry[1];
+                    break;
             }
         }
 
@@ -144,6 +163,34 @@ router.put('/embed', ValidationMiddleware(EmbedSchema), async (req: Request, res
         res.status(200).json({
             success: true,
             message: 'updated embed successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.put('/wipe_interval', ValidationMiddleware(WipeIntervalSchema), async (req: Request, res: Response) => {
+    const { value } = req.body;
+    const { user } = req;
+
+    try {
+        const validIntervals = [ms('1h'), ms('2h'), ms('12h'), ms('24h'), ms('1w'), ms('2w'), ms('4w')];
+
+        if (!validIntervals.includes(value)) return res.status(400).json({
+            success: false,
+            error: 'invalid interval',
+        });
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            'settings.autoWipe.interval': value,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'update interval successfully',
         });
     } catch (err) {
         res.status(500).json({

@@ -1,6 +1,9 @@
 import { boolean, object } from 'joi';
 
 export default object({
+    longUrl: boolean()
+        .optional(),
+
     showLink: boolean()
         .optional(),
 
@@ -10,6 +13,9 @@ export default object({
     randomDomain: boolean()
         .optional(),
 
-    embed: boolean()
+    embeds: boolean()
+        .optional(),
+
+    autoWipe: boolean()
         .optional(),
 }).options({ abortEarly: false });

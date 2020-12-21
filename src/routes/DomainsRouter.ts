@@ -8,11 +8,14 @@ import CloudflareUtil from '../utils/CloudflareUtil';
 import { logDomains } from '../utils/LoggingUtil';
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
+    const { user } = req;
     try {
         const count = await DomainModel.countDocuments();
-        const domains = await DomainModel.find({})
-            .select('-__v -_id');
+        let domains = await DomainModel.find({ userOnly: { $ne: true } })
+            .select('-__v -_id -donatedBy');
+
+        if (user) domains = (await DomainModel.find({ donatedBy: user._id }).select('-__v -_id -donatedBy')).concat(domains);
 
         res.status(200).json({
             success: true,
@@ -28,14 +31,16 @@ router.get('/', async (_req: Request, res: Response) => {
 });
 
 router.post('/', AdminMiddleware, ValidationMiddleware(DomainSchema), async (req: Request, res: Response) => {
-    if (req.body.length <= 0) return res.status(400).json({
+    const { user, body } = req;
+
+    if (body.length <= 0) return res.status(400).json({
         success: false,
         error: 'provide at least one domain object',
     });
 
     try {
-        for (const field of req.body) {
-            const { name, wildcard, donated, donatedBy, userOnly } = field;
+        for (const field of body) {
+            let { name, wildcard, donated, donatedBy, userOnly } = field;
             const domain = await DomainModel.findOne({ name });
 
             if (domain) return res.status(400).json({
@@ -43,7 +48,7 @@ router.post('/', AdminMiddleware, ValidationMiddleware(DomainSchema), async (req
                 error: `${name} already exists`,
             });
 
-            await CloudflareUtil.addDomain(name, wildcard);
+            if (user && userOnly && !donatedBy) donatedBy = user._id;
 
             await DomainModel.create({
                 name,
