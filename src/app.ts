@@ -14,6 +14,10 @@ import express, { json } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import SessionMiddleware from './middlewares/SessionMiddleware';
+import UserModel from './models/UserModel';
+import ms from 'ms';
+import { intervals } from './utils/Intervals';
+import { wipeFiles } from './utils/S3Util';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -94,7 +98,28 @@ try {
         console.log('Connected to MongoDB cluster');
     });
 
-    (async () => await transporter.verify())();
+    (async () => {
+        await transporter.verify();
+
+        for (const user of await UserModel.find({ 'settings.autoWipe.enabled': true })) {
+            const { interval } = user.settings.autoWipe;
+            const validIntervals = [ms('1m'), ms('1h'), ms('2h'), ms('12h'), ms('24h'), ms('1w'), ms('2w'), ms('4w')];
+
+            if (validIntervals.includes(interval)) {
+                const findInterval = intervals.find((i) => i.uuid === user._id);
+                if (findInterval) clearInterval(findInterval.id);
+
+                const id = setInterval(async () => {
+                    await wipeFiles(user);
+                }, interval);
+
+                intervals.push({
+                    id,
+                    uuid: user._id,
+                });
+            }
+        }
+    })();
 } catch (err) {
     throw new Error(err);
 }

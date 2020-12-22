@@ -8,6 +8,8 @@ import PreferencesSchema from '../../schemas/PreferencesSchema';
 import RandomDomainSchema from '../../schemas/RandomDomainSchema';
 import UpdateDomainSchema from '../../schemas/UpdateDomainSchema';
 import WipeIntervalSchema from '../../schemas/WipeIntervalSchema';
+import { delInterval, intervals } from '../../utils/Intervals';
+import { wipeFiles } from '../../utils/S3Util';
 const router = Router();
 
 router.put('/domain', ValidationMiddleware(UpdateDomainSchema), async (req: Request, res: Response) => {
@@ -116,6 +118,24 @@ router.put('/preferences', ValidationMiddleware(PreferencesSchema), async (req: 
                     toUpdate['settings.randomDomain.enabled'] = entry[1];
                     break;
                 case 'autoWipe':
+                    const findInterval = intervals.find((i) => i.uuid === user._id);
+
+                    if (findInterval) {
+                        clearInterval(findInterval.id);
+                        delInterval(user._id);
+                    }
+
+                    if (entry[1] === true) {
+                        const interval = setInterval(async () => {
+                            await wipeFiles(user);
+                        }, user.settings.autoWipe.interval);
+
+                        intervals.push({
+                            id: interval,
+                            uuid: user._id,
+                        });
+                    }
+
                     toUpdate['settings.autoWipe.enabled'] = entry[1];
                     break;
                 case 'embeds':
@@ -177,7 +197,7 @@ router.put('/wipe_interval', ValidationMiddleware(WipeIntervalSchema), async (re
     const { user } = req;
 
     try {
-        const validIntervals = [ms('1h'), ms('2h'), ms('12h'), ms('24h'), ms('1w'), ms('2w'), ms('4w')];
+        const validIntervals = [ms('1m'), ms('1h'), ms('2h'), ms('12h'), ms('24h'), ms('1w'), ms('2w'), ms('4w')];
 
         if (!validIntervals.includes(value)) return res.status(400).json({
             success: false,
@@ -187,6 +207,24 @@ router.put('/wipe_interval', ValidationMiddleware(WipeIntervalSchema), async (re
         await UserModel.findByIdAndUpdate(user._id, {
             'settings.autoWipe.interval': value,
         });
+
+        if (user.settings.autoWipe.enabled) {
+            const findInterval = intervals.find((i) => i.uuid === user._id);
+
+            if (findInterval) {
+                clearInterval(findInterval.id);
+                delInterval(user._id);
+            }
+
+            const interval = setInterval(async () => {
+                await wipeFiles(user);
+            }, value);
+
+            intervals.push({
+                id: interval,
+                uuid: user._id,
+            });
+        }
 
         res.status(200).json({
             success: true,
