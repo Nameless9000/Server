@@ -162,10 +162,10 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
                 },
                 embed: {
                     enabled: false,
-                    color: null,
-                    title: null,
-                    description: null,
-                    author: username,
+                    color: '#ed13d4',
+                    title: 'default',
+                    description: 'default',
+                    author: 'default',
                     randomColor: false,
                 },
                 autoWipe: {

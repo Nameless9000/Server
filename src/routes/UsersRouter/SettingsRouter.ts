@@ -197,7 +197,7 @@ router.put('/wipe_interval', ValidationMiddleware(WipeIntervalSchema), async (re
     const { user } = req;
 
     try {
-        const validIntervals = [ms('1m'), ms('1h'), ms('2h'), ms('12h'), ms('24h'), ms('1w'), ms('2w'), ms('4w')];
+        const validIntervals = [ms('1h'), ms('2h'), ms('12h'), ms('24h'), ms('1w'), ms('2w'), 2147483647];
 
         if (!validIntervals.includes(value)) return res.status(400).json({
             success: false,
