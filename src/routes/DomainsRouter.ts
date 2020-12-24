@@ -12,10 +12,16 @@ router.get('/', async (req: Request, res: Response) => {
     const { user } = req;
     try {
         const count = await DomainModel.countDocuments();
-        let domains = await DomainModel.find({ userOnly: { $ne: true } })
-            .select('-__v -_id -donatedBy');
+        let domains: any = await DomainModel.find({ userOnly: { $ne: true } })
+            .select('-__v -_id -donatedBy').lean();
 
-        if (user) domains = (await DomainModel.find({ donatedBy: user._id }).select('-__v -_id -donatedBy')).concat(domains);
+        if (user) domains = (await DomainModel.find({ donatedBy: user._id }).select('-__v -_id -donatedBy').lean()).concat(domains);
+
+        for (let i = 0; i < domains.length; i++) {
+            const users = await UserModel.countDocuments({ 'settings.domain.name': domains[i].name });
+
+            domains[i].users = users;
+        }
 
         res.status(200).json({
             success: true,
@@ -49,6 +55,8 @@ router.post('/', AdminMiddleware, ValidationMiddleware(DomainSchema), async (req
             });
 
             if (user && userOnly && !donatedBy) donatedBy = user._id;
+
+            // await CloudflareUtil.addDomain(name, wildcard)
 
             await DomainModel.create({
                 name,
