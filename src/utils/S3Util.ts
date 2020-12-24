@@ -1,4 +1,5 @@
 import { S3 } from 'aws-sdk';
+import DomainModel from '../models/DomainModel';
 import { User } from '../models/UserModel';
 
 /**
@@ -12,33 +13,68 @@ const s3 = new S3({
     endpoint: process.env.S3_ENDPOINT,
 });
 
+// the function below is terrible, disgusting, and long, I know, I couldn't really think of any either way to do it and I wanted to release quickly, sorry!
+
 /**
  * Wipe a user's files.
  * @param {user} user The user's files to wipe.
+ * @param {string} dir The directory to delete.
  */
-async function wipeFiles(user: User) {
-    const params = {
-        Bucket: process.env.S3_BUCKET,
-        Prefix: `${user._id}/`,
-    };
+async function wipeFiles(user: User, dir: string = `${user._id}/`) {
+    const domains = await DomainModel.find({ userOnly: true, donatedBy: user._id });
+    let count: number = 0;
 
-    const deleteParams = {
-        Bucket: process.env.S3_BUCKET,
-        Delete: {
-            Objects: [],
-        },
-    };
+    while (true) {
+        const params = {
+            Bucket: process.env.S3_BUCKET,
+            Prefix: dir,
+        };
 
-    const objects = await s3.listObjectsV2(params).promise();
+        if (domains.length !== 0) for (const domain of domains) {
+            if (domain.userOnly) {
+                params.Prefix = `${domain.name}/`;
 
-    if (objects.Contents.length !== 0) {
-        for (const { Key } of objects.Contents) {
-            deleteParams.Delete.Objects.push({ Key });
+                const domainObjects = await s3.listObjectsV2(params).promise();
+
+                if (domainObjects.Contents.length !== 0) {
+                    const deleteParams = {
+                        Bucket: process.env.S3_BUCKET,
+                        Delete: {
+                            Objects: [],
+                        },
+                    };
+
+                    for (const { Key } of domainObjects.Contents) {
+                        deleteParams.Delete.Objects.push({ Key });
+                    }
+
+                    const deleteOutput = await s3.deleteObjects(deleteParams).promise();
+                    count += (deleteOutput.Deleted as AWS.S3.DeletedObjects).length;
+                }
+            }
         }
 
-        await s3.deleteObjects(deleteParams).promise();
+        params.Prefix = `${user._id}/`;
 
-        if (objects.IsTruncated) await wipeFiles(user);
+        const objects = await s3.listObjectsV2(params).promise();
+
+        if (objects.Contents.length !== 0) {
+            const deleteParams = {
+                Bucket: process.env.S3_BUCKET,
+                Delete: {
+                    Objects: [],
+                },
+            };
+
+            for (const { Key } of objects.Contents) {
+                deleteParams.Delete.Objects.push({ Key });
+            }
+
+            const deleteOutput = await s3.deleteObjects(deleteParams).promise();
+            count += (deleteOutput.Deleted as AWS.S3.DeletedObjects).length;
+        }
+
+        if (!objects.IsTruncated) return count;
     }
 }
 

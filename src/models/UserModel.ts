@@ -39,6 +39,12 @@ export class User {
     key: string;
 
     /**
+     * Whether or not the user is premium.
+     */
+    @prop()
+    premium: boolean;
+
+    /**
      * The last time the key was regened.
      */
     @prop()

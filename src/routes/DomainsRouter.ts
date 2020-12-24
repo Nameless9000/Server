@@ -1,21 +1,23 @@
 import { Request, Response, Router } from 'express';
 import AdminMiddleware from '../middlewares/AdminMiddleware';
+import AuthMiddleware from '../middlewares/AuthMiddleware';
 import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import DomainModel from '../models/DomainModel';
 import UserModel from '../models/UserModel';
+import CustomDomainSchema from '../schemas/CustomDomainSchema';
 import DomainSchema from '../schemas/DomainSchema';
 import CloudflareUtil from '../utils/CloudflareUtil';
-import { logDomains } from '../utils/LoggingUtil';
+import { logCustomDomain, logDomains } from '../utils/LoggingUtil';
 const router = Router();
 
 router.get('/', async (req: Request, res: Response) => {
     const { user } = req;
     try {
         const count = await DomainModel.countDocuments();
-        let domains: any = await DomainModel.find({ userOnly: { $ne: true } })
+        let domains: any = await DomainModel.find({ userOnly: false })
             .select('-__v -_id -donatedBy').lean();
 
-        if (user) domains = (await DomainModel.find({ donatedBy: user._id }).select('-__v -_id -donatedBy').lean()).concat(domains);
+        if (user) domains = (await DomainModel.find({ userOnly: true, donatedBy: user._id }).select('-__v -_id -donatedBy').lean()).concat(domains);
 
         for (let i = 0; i < domains.length; i++) {
             const users = await UserModel.countDocuments({ 'settings.domain.name': domains[i].name });
@@ -56,7 +58,7 @@ router.post('/', AdminMiddleware, ValidationMiddleware(DomainSchema), async (req
 
             if (user && userOnly && !donatedBy) donatedBy = user._id;
 
-            // await CloudflareUtil.addDomain(name, wildcard)
+            await CloudflareUtil.addDomain(name, wildcard);
 
             await DomainModel.create({
                 name,
@@ -75,6 +77,50 @@ router.post('/', AdminMiddleware, ValidationMiddleware(DomainSchema), async (req
             message: `${req.body.length > 1 ? `added ${req.body.length} domains` : 'added domain'} successfully`,
         });
     } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.post('/custom', AuthMiddleware, ValidationMiddleware(CustomDomainSchema), async (req: Request, res: Response) => {
+    const { user } = req;
+    const { name, wildcard, userOnly } = req.body;
+
+    if (!user.premium) return res.status(401).json({
+        success: false,
+        error: 'you do not have permission to add custom domains',
+    });
+
+    try {
+        let domain: any = await DomainModel.findOne({ name });
+
+        if (domain) return res.status(400).json({
+            success: false,
+            error: `${name} already exists`,
+        });
+
+        // await CloudflareUtil.addDomain(name, wildcard);
+
+        domain = await DomainModel.create({
+            name,
+            wildcard,
+            donated: true,
+            donatedBy: user._id,
+            userOnly: userOnly,
+            dateAdded: new Date(),
+        });
+
+        await logCustomDomain(domain);
+
+        res.status(200).json({
+            success: true,
+            message: 'added domain successfully',
+            domain,
+        });
+    } catch (err) {
+        console.log(err.response.data);
         res.status(500).json({
             success: false,
             error: err.message,
@@ -126,7 +172,7 @@ router.get('/list', async (_req: Request, res: Response) => {
     }
 });
 
-router.get('/rank', async (req: Request, res: Response) => {
+router.get('/rank', async (_req: Request, res: Response) => {
     try {
         const domains = await DomainModel.find({});
         const ranks = [];

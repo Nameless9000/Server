@@ -12,7 +12,7 @@ router.get('/login', (req: Request, res: Response) => {
 });
 
 router.get('/login/callback', OAuthMiddleware(), async (req: Request, res: Response) => {
-    const { id, avatar } = req.discord.user;
+    const { id, avatar, discriminator } = req.discord.user;
 
     try {
         const user = await UserModel.findOne({ 'discord.id': id });
@@ -27,7 +27,7 @@ router.get('/login/callback', OAuthMiddleware(), async (req: Request, res: Respo
             lastLogin: new Date(),
         };
 
-        if (user.discord.avatar !== avatar) update['discord.avatar'] = `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`,
+        if (user.discord.avatar !== avatar) update['discord.avatar'] = `https://cdn.discordapp.com/${avatar ? `avatars/${id}/${avatar}` : `embed/avatars/${discriminator % 5}`}.png`,
 
         await UserModel.findByIdAndUpdate(user._id, update);
 
@@ -73,14 +73,14 @@ router.get('/link/callback', OAuthMiddleware('link'), async (req: Request, res: 
     });
 
     try {
-        const { id, avatar } = req.discord.user;
+        const { id, avatar, discriminator } = req.discord.user;
 
         await req.discord.addGuildMember(user);
 
         await UserModel.findByIdAndUpdate(user._id, {
             discord: {
                 id,
-                avatar: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`,
+                avatar: `https://cdn.discordapp.com/${avatar ? `avatars/${id}/${avatar}` : `embed/avatars/${discriminator % 5}`}.png`,
             },
         });
 

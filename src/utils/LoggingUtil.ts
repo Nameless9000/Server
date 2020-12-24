@@ -14,6 +14,39 @@ async function logDomains(domains: Domain[]) {
     });
 };
 
+/**
+ * Log a single custom domain to the webhook in the server.
+ * @param {Domain} domain The domain.
+ */
+async function logCustomDomain(domain: Domain) {
+    await Axios.post(process.env.CUSTOM_DOMAIN_WEBHOOK, {
+        embeds: [
+            {
+                title: 'A new domain has been added',
+                fields: [
+                    {
+                        name: 'Name',
+                        value: `[${domain.name}](https://${domain.name})`,
+                    },
+                    {
+                        name: 'Wildcard',
+                        value: domain.wildcard ? 'Yes' : 'No',
+                    },
+                    {
+                        name: 'Donator',
+                        value: domain.donatedBy,
+                    },
+                    {
+                        name: 'User Only',
+                        value: domain.userOnly ? 'Yes' : 'No',
+                    },
+                ],
+            },
+        ],
+    });
+}
+
 export {
-    logDomains
+    logDomains,
+    logCustomDomain
 };

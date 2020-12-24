@@ -187,7 +187,7 @@ router.post('/wipe', AuthMiddleware, async (req: Request, res: Response) => {
     const { user } = req;
 
     try {
-        await wipeFiles(user);
+        console.log(await wipeFiles(user));
 
         await FileModel.deleteMany({
             'uploader.uuid': user._id,

@@ -18,6 +18,7 @@ import cors from 'cors';
 import SessionMiddleware from './middlewares/SessionMiddleware';
 import UserModel from './models/UserModel';
 import ms from 'ms';
+import CounterModel from './models/CounterModel';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ try {
         'CLOUDFLARE_ACCOUNT_ID',
         'CLOUDFLARE_EMAIL',
         'WEBHOOK_URL',
+        'CUSTOM_DOMAIN_WEBHOOK',
         'GSUITE_CLIENT_ID',
         'ACCESS_TOKEN_SECRET',
         'REFRESH_TOKEN_SECRET',
@@ -100,6 +102,9 @@ try {
 
     (async () => {
         await transporter.verify();
+
+        const findCounter = await CounterModel.findById('counter');
+        if (!findCounter) throw new Error('Create a counter document with the value 1 as the count');
 
         for (const user of await UserModel.find({ 'settings.autoWipe.enabled': true })) {
             const { interval } = user.settings.autoWipe;

@@ -130,6 +130,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
             password,
             invite,
             key: `astral_${generateString(30)}`,
+            premium: false,
             lastKeyRegen: null,
             email,
             emailVerified: false,

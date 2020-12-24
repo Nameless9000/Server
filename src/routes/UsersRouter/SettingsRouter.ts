@@ -50,7 +50,7 @@ router.put('/domain', ValidationMiddleware(UpdateDomainSchema), async (req: Requ
     }
 });
 
-router.put('/random_domain', ValidationMiddleware(RandomDomainSchema), async (req: Request, res: Response) => {
+router.post('/random_domain', ValidationMiddleware(RandomDomainSchema), async (req: Request, res: Response) => {
     const { user } = req;
     const { domain } = req.body;
     const { domains } = user.settings.randomDomain;
@@ -58,7 +58,7 @@ router.put('/random_domain', ValidationMiddleware(RandomDomainSchema), async (re
     try {
         if (domains.find((d) => d === domain)) return res.status(400).json({
             success: false,
-            error: 'you already have this domain added',
+            error: 'this domain is already in use',
         });
 
         await UserModel.findByIdAndUpdate(user._id, {
