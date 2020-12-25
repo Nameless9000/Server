@@ -48,8 +48,8 @@ async function wipeFiles(user: User, dir: string = `${user._id}/`) {
                         deleteParams.Delete.Objects.push({ Key });
                     }
 
-                    const deleteOutput = await s3.deleteObjects(deleteParams).promise();
-                    count += (deleteOutput.Deleted as AWS.S3.DeletedObjects).length;
+                    const deleted = await s3.deleteObjects(deleteParams).promise();
+                    count += (deleted.Deleted as AWS.S3.DeletedObjects).length;
                 }
             }
         }
@@ -70,8 +70,8 @@ async function wipeFiles(user: User, dir: string = `${user._id}/`) {
                 deleteParams.Delete.Objects.push({ Key });
             }
 
-            const deleteOutput = await s3.deleteObjects(deleteParams).promise();
-            count += (deleteOutput.Deleted as AWS.S3.DeletedObjects).length;
+            const deleted = await s3.deleteObjects(deleteParams).promise();
+            count += (deleted.Deleted as AWS.S3.DeletedObjects).length;
         }
 
         if (!objects.IsTruncated) return count;

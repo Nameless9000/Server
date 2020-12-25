@@ -15,6 +15,7 @@ import DiscordRouter from './DiscordRouter';
 import PasswordResetsRouter from './PasswordResetsRouter';
 import PasswordResetModel from '../../models/PasswordResetModel';
 import CounterModel from '../../models/CounterModel';
+import RefreshTokenModel from '../../models/RefreshTokenModel';
 const router = Router();
 
 async function getNextUid() {
@@ -31,20 +32,33 @@ router.use('/discord', DiscordRouter);
 router.use('/password_resets', PasswordResetsRouter);
 
 router.post('/token', async (req: Request, res: Response) => {
-    const refreshToken = req.cookies['x-auth-token'];
+    const cookie = req.cookies['x-refresh-token'];
 
-    if (!refreshToken) return res.status(401).json({
+    if (!cookie) return res.status(401).json({
         success: false,
         error: 'provide a refresh token',
     });
 
     try {
-        const token: any = verifyjwt(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const refreshToken = await RefreshTokenModel.findOne({ token: cookie });
+
+        if (!refreshToken || Date.now() >= new Date(refreshToken.expires).getTime()) {
+            if (refreshToken) await refreshToken.remove();
+
+            res.status(401).json({
+                success: false,
+                error: 'invalid refresh token',
+            });
+
+            return;
+        }
+
+        const token: any = verifyjwt(refreshToken.token, process.env.REFRESH_TOKEN_SECRET);
 
         const user = await UserModel.findOne({ _id: token._id })
             .select('-__v -password');
 
-        if (!user || token.iat > user.lastLogin.getTime() / 1000) return res.status(401).json({
+        if (!user) return res.status(401).json({
             success: false,
             error: 'invalid refresh token',
         });
@@ -151,7 +165,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
             registrationDate: new Date(),
             lastLogin: null,
             testimonial: null,
-            roles: ['whitelisted'],
+            admin: false,
             settings: {
                 domain: {
                     name: 'i.astral.cool',
@@ -224,39 +238,67 @@ router.post('/login', ValidationMiddleware(LoginSchema), async (req: Request, re
         error: `you are blacklisted for: ${user.blacklisted.reason}`,
     });
 
-    const passwordReset = await PasswordResetModel.findOne({ user: user._id });
-    if (passwordReset) await passwordReset.remove();
+    try {
+        const passwordReset = await PasswordResetModel.findOne({ user: user._id });
+        if (passwordReset) await passwordReset.remove();
 
-    await UserModel.findByIdAndUpdate(user._id, {
-        lastLogin: new Date(),
-    });
+        await UserModel.findByIdAndUpdate(user._id, {
+            lastLogin: new Date(),
+        });
 
-    const accessToken = sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-    const refreshToken = sign({ _id: user._id }, process.env.REFRESH_TOKEN_SECRET);
+        const accessToken = sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+        const refreshToken = sign({ _id: user._id }, process.env.REFRESH_TOKEN_SECRET);
 
-    res.cookie('x-auth-token', refreshToken, { httpOnly: true, secure: false });
+        await RefreshTokenModel.create({
+            token: refreshToken,
+            user: user._id,
+            expires: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
+        });
 
-    res.status(200).json({
-        success: true,
-        accessToken,
-        user: await UserModel.findById(user._id).select('-__v -password'),
-    });
+        res.cookie('x-refresh-token', refreshToken, { httpOnly: true, secure: false });
+
+        res.status(200).json({
+            success: true,
+            accessToken,
+            user: await UserModel.findById(user._id).select('-__v -password'),
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
-router.get('/logout', (req: Request, res: Response) => {
-    const cookie = req.cookies['x-auth-token'];
+router.get('/logout', async (req: Request, res: Response) => {
+    const cookie = req.cookies['x-refresh-token'];
 
     if (!cookie) return res.status(401).json({
         success: false,
         error: 'unauthorized',
     });
 
-    res.clearCookie('x-auth-token');
+    try {
+        const refreshToken = await RefreshTokenModel.findOne({ token: cookie });
 
-    res.status(200).json({
-        success: true,
-        message: 'logged out successfully',
-    });
+        if (!refreshToken) return res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
+
+        await refreshToken.remove();
+        res.clearCookie('x-refresh-token');
+
+        res.status(200).json({
+            success: true,
+            message: 'logged out successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
 router.get('/verify', ValidationMiddleware(VerifyEmailSchema, 'query'), async (req: Request, res: Response) => {
@@ -288,6 +330,10 @@ router.get('/verify', ValidationMiddleware(VerifyEmailSchema, 'query'), async (r
             error: err.message,
         });
     }
+});
+
+router.post('/logout_all_devices', async (req: Request, res: Response) => {
+
 });
 
 export default router;

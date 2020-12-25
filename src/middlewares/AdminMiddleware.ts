@@ -7,7 +7,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
 
     if (user) user = await UserModel.findById(user._id);
 
-    if (!key && !user || key !== process.env.API_KEY && (user && !user.roles.includes('admin')))
+    if (!key && !user || key !== process.env.API_KEY && (user && !user.admin))
         return res.status(401).json({
             success: false,
             error: 'unauthorized',

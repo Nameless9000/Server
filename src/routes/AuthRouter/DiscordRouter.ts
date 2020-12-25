@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import { sign } from 'jsonwebtoken';
 import OAuthMiddleware from '../../middlewares/OAuthMiddleware';
 import PasswordResetModel from '../../models/PasswordResetModel';
+import RefreshTokenModel from '../../models/RefreshTokenModel';
 import UserModel from '../../models/UserModel';
 const router = Router();
 
@@ -30,10 +31,15 @@ router.get('/login/callback', OAuthMiddleware(), async (req: Request, res: Respo
         if (user.discord.avatar !== avatar) update['discord.avatar'] = `https://cdn.discordapp.com/${avatar ? `avatars/${id}/${avatar}` : `embed/avatars/${discriminator % 5}`}.png`,
 
         await UserModel.findByIdAndUpdate(user._id, update);
-
         const refreshToken = sign({ _id: user._id }, process.env.REFRESH_TOKEN_SECRET);
 
-        res.cookie('x-auth-token', refreshToken, { httpOnly: true, secure: false });
+        await RefreshTokenModel.create({
+            token: refreshToken,
+            user: user._id,
+            expires: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
+        });
+
+        res.cookie('x-refresh-token', refreshToken, { httpOnly: true, secure: false });
         res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     } catch (err) {
         res.status(500).json({

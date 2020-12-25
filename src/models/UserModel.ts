@@ -135,10 +135,10 @@ export class User {
     testimonial: string;
 
     /**
-     * The user's roles.
+     * Whether or not the user is a admin.
      */
-    @prop({ type: () => [String] })
-    roles: string[];
+    @prop()
+    admin: boolean;
 
     /**
      * The user's settings, their preferences, their domain, etc.

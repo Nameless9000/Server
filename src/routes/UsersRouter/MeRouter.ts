@@ -9,6 +9,7 @@ import SettingsRouter from './SettingsRouter';
 import { formatFilesize } from '../../utils/FormatUtil';
 import { generateString } from '../../utils/GenerateUtil';
 import InviteModel from '../../models/InviteModel';
+import DomainModel from '../../models/DomainModel';
 const router = Router();
 
 const filter = new Filter({
@@ -64,6 +65,7 @@ router.put('/testimonial', ValidationMiddleware(TestimonialSchema), async (req: 
 
 router.get('/images', async (req: Request, res: Response) => {
     const { user } = req;
+    const domains = await DomainModel.find({ userOnly: true, donatedBy: user._id });
 
     try {
         const params = {
@@ -71,7 +73,7 @@ router.get('/images', async (req: Request, res: Response) => {
             Prefix: `${user._id}/`,
         };
 
-        const objects = await s3.listObjectsV2(params).promise();
+        let objects = await s3.listObjectsV2(params).promise();
         objects.Contents.sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime());
 
         const images = [];
@@ -86,6 +88,26 @@ router.get('/images', async (req: Request, res: Response) => {
                 filename: object.Key.split('/')[1],
                 size: formatFilesize(object.Size),
             });
+        }
+
+        if (domains.length !== 0) for (const domain of domains) {
+            if (domain.userOnly) {
+                params.Prefix = `${domain.name}/`;
+
+                objects = await s3.listObjectsV2(params).promise();
+                objects.Contents.sort((a, b) => b.LastModified.getTime() - a.LastModified.getTime());
+
+                for (const object of objects.Contents) {
+                    storageUsed += object.Size;
+
+                    images.push({
+                        link: `https://cdn.astral.cool/${domain.name}/${object.Key.split('/')[1]}`,
+                        dateUploaded: object.LastModified,
+                        filename: object.Key.split('/')[1],
+                        size: formatFilesize(object.Size),
+                    });
+                }
+            }
         }
 
         res.status(200).json({

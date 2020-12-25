@@ -187,7 +187,7 @@ router.post('/wipe', AuthMiddleware, async (req: Request, res: Response) => {
     const { user } = req;
 
     try {
-        console.log(await wipeFiles(user));
+        const count = await wipeFiles(user);
 
         await FileModel.deleteMany({
             'uploader.uuid': user._id,
@@ -203,7 +203,8 @@ router.post('/wipe', AuthMiddleware, async (req: Request, res: Response) => {
 
         res.status(200).json({
             success: true,
-            message: 'wiped images successfully',
+            message: `wiped ${count} files successfully`,
+            count,
         });
     } catch (err) {
         res.status(500).json({

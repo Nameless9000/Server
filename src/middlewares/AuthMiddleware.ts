@@ -4,13 +4,13 @@ import UserModel from '../models/UserModel';
 export default async (req: Request, res: Response, next: NextFunction) => {
     let { user } = req;
 
-    if (user) user = await UserModel.findById(user._id)
-        .select('-__v -password');
-
     if (!user) return res.status(401).json({
         success: false,
         error: 'unauthorized',
     });
+
+    user = await UserModel.findById(user._id)
+        .select('-__v -password');
 
     if (!user.emailVerified) return res.status(401).json({
         success: false,

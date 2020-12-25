@@ -101,7 +101,7 @@ router.post('/custom', AuthMiddleware, ValidationMiddleware(CustomDomainSchema),
             error: `${name} already exists`,
         });
 
-        // await CloudflareUtil.addDomain(name, wildcard);
+        await CloudflareUtil.addDomain(name, wildcard);
 
         domain = await DomainModel.create({
             name,
