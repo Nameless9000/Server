@@ -12,6 +12,7 @@ import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import DeletionSchema from '../schemas/DeletionSchema';
 import ConfigSchema from '../schemas/ConfigSchema';
 import AuthMiddleware from '../middlewares/AuthMiddleware';
+import DomainModel from '../models/DomainModel';
 const router = Router();
 
 router.get('/', async (_req: Request, res: Response) => {
@@ -66,6 +67,7 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
         filename: file.filename,
         timestamp,
         mimetype: file.mimetype,
+        domain: req.headers.domain ? req.headers.domain : user.settings.domain.name,
         size: formatFilesize(file.size),
         deletionKey,
         embed,
@@ -115,11 +117,14 @@ router.get('/delete', ValidationMiddleware(DeletionSchema, 'query'), async (req:
     });
 
     const user = await UserModel.findById(file.uploader.uuid);
+    const domain = await DomainModel.findOne({ name: file.domain });
 
     const params = {
         Bucket: process.env.S3_BUCKET,
         Key: `${user._id || file.uploader.uuid}/${file.filename}`,
     };
+
+    if (domain.userOnly) params.Key = `${file.domain}/${file.filename}`;
 
     try {
         await s3.deleteObject(params).promise();
@@ -155,10 +160,14 @@ router.delete('/:id', AuthMiddleware, async (req: Request, res: Response) => {
         error: 'invalid file',
     });
 
+    const domain = await DomainModel.findOne({ name: file.domain });
+
     const params = {
         Bucket: process.env.S3_BUCKET,
         Key: `${user._id || file.uploader.uuid}/${file.filename}`,
     };
+
+    if (domain.userOnly) params.Key = `${file.domain}/${file.filename}`;
 
     try {
         await s3.deleteObject(params).promise();

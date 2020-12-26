@@ -27,6 +27,12 @@ export class File {
     size: string;
 
     /**
+     * The domain the user used.
+     */
+    @prop()
+    domain: string;
+
+    /**
      * The file's deletion key.
      */
     @prop()

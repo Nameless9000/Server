@@ -34,7 +34,8 @@ function formatEmbed(embed: EmbedInterface, user: User, file: File): EmbedInterf
                 .replace('{uploads}', user.uploads)
                 .replace('{date}', file.timestamp.toLocaleDateString())
                 .replace('{time}', file.timestamp.toLocaleTimeString())
-                .replace('{timestamp}', file.timestamp.toLocaleString());
+                .replace('{timestamp}', file.timestamp.toLocaleString())
+                .replace('{domain}', file.domain);
 
             const TIMEZONE_REGEX = /{(time|timestamp):([^}]+)}/i;
             let match = embed[field].match(TIMEZONE_REGEX);

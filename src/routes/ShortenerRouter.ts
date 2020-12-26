@@ -8,6 +8,7 @@ import ConfigSchema from '../schemas/ConfigSchema';
 import DeletionSchema from '../schemas/DeletionSchema';
 import ShortenerSchema from '../schemas/ShortenerSchema';
 import ipLoggers from '../utils/IPLoggers.json';
+import AuthMiddleware from '../middlewares/AuthMiddleware';
 const router = Router();
 
 function isIpLogger(url: string) {
@@ -17,6 +18,26 @@ function isIpLogger(url: string) {
 
     return false;
 }
+
+router.get('/urls', AuthMiddleware, async (req: Request, res: Response) => {
+    const { user } = req;
+
+    try {
+        const urls = await ShortenerModel.find({ user: user._id })
+            .select('-_id -__v');
+
+        res.status(200).json({
+            success: true,
+            urls,
+            count: urls.length,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
 
 router.post('/', UploadMiddleware, ValidationMiddleware(ShortenerSchema), async (req: Request, res: Response) => {
     const { user } = req;
@@ -55,20 +76,18 @@ router.post('/', UploadMiddleware, ValidationMiddleware(ShortenerSchema), async 
     }
 
     try {
-        const { domain, randomDomain, longUrl } = user.settings;
-        const shortId = longUrl ? generateString(17): generateString(7);
+        const { domain } = user.settings;
+        const longUrl = req.headers.longurl ? req.headers.longurl === 'true' : user.settings.longUrl;
 
-        let baseUrl = req.headers.domain ?
+        const shortId = longUrl ? generateString(17): generateString(10);
+
+        const baseUrl = req.headers.domain ?
             req.headers.domain :
             `${domain.subdomain && domain.subdomain !== '' ? `${domain.subdomain}.` : ''}${domain.name}`;
 
-        if (req.headers.randomdomain ? req.headers.randomdomain === 'true' : randomDomain.enabled) baseUrl = randomDomain.domains.length > 0 ?
-            randomDomain.domains[Math.floor(Math.random() * randomDomain.domains.length)] :
-            baseUrl;
-
         const deletionKey = generateString(40);
         const deletionUrl = `${process.env.BACKEND_URL}/shortener/delete?key=${deletionKey}`;
-        const shortendUrl = `https://${baseUrl}/${shortId}`;
+        const shortendUrl = `https://${baseUrl}/s/${shortId}`;
 
         await ShortenerModel.create({
             shortId,
@@ -82,6 +101,7 @@ router.post('/', UploadMiddleware, ValidationMiddleware(ShortenerSchema), async 
             success: true,
             shortendUrl,
             deletionUrl,
+            document: await ShortenerModel.findOne({ shortId }).select('-_id -__v'),
         });
     } catch (err) {
         res.status(500).json({

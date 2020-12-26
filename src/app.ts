@@ -81,7 +81,7 @@ try {
     app.use('/users', UsersRouter);
     app.use('/shortener', ShortenerRouter);
 
-    app.use((req, res) => {
+    app.use((_req, res) => {
         res.status(404).json({
             success: false,
             error: 'invalid page',
