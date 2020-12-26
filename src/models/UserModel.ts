@@ -51,6 +51,12 @@ export class User {
     lastKeyRegen: Date;
 
     /**
+     * The last time the user's username was changed.
+     */
+    @prop()
+    lastUsernameChange: Date;
+
+    /**
      * The user's email.
      */
     @prop()

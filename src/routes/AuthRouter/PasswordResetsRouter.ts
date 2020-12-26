@@ -7,6 +7,7 @@ import { generateString } from '../../utils/GenerateUtil';
 import { sendPasswordReset } from '../../utils/MailUtil';
 import PasswordResetSchema from '../../schemas/PasswordResetSchema';
 import { hash, verify } from 'argon2';
+import RefreshTokenModel from '../../models/RefreshTokenModel';
 const router = Router();
 
 router.post('/send', ValidationMiddleware(PasswordResetConfirmationSchema), async (req: Request, res: Response) => {
@@ -70,7 +71,7 @@ router.post('/reset', ValidationMiddleware(PasswordResetSchema), async (req: Req
         error: 'invalid key',
     });
 
-    user = await UserModel.findById(user._id);
+    user = await UserModel.findById(reset.user);
 
     if (!user) {
         res.status(400).json({
@@ -94,6 +95,8 @@ router.post('/reset', ValidationMiddleware(PasswordResetSchema), async (req: Req
     });
 
     try {
+        await RefreshTokenModel.deleteMany({ user: user._id });
+
         await UserModel.findByIdAndUpdate(user._id, {
             password: await hash(password),
         });

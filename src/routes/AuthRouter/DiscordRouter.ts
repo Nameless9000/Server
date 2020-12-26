@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { sign } from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import OAuthMiddleware from '../../middlewares/OAuthMiddleware';
 import PasswordResetModel from '../../models/PasswordResetModel';
 import RefreshTokenModel from '../../models/RefreshTokenModel';
@@ -7,7 +7,9 @@ import UserModel from '../../models/UserModel';
 const router = Router();
 
 router.get('/login', (req: Request, res: Response) => {
-    req.user ?
+    const cookie = req.cookies['x-refresh-token'];
+
+    cookie ?
         res.redirect(`${process.env.FRONTEND_URL}/dashboard`) :
         res.redirect(process.env.DISCORD_LOGIN_URL);
 });
@@ -50,7 +52,9 @@ router.get('/login/callback', OAuthMiddleware(), async (req: Request, res: Respo
 });
 
 router.get('/link', (req: Request, res: Response) => {
-    req.user ?
+    const cookie = req.cookies['x-refresh-token'];
+
+    cookie ?
         res.redirect(process.env.DISCORD_LINK_URL) :
         res.status(401).json({
             success: false,
@@ -59,26 +63,42 @@ router.get('/link', (req: Request, res: Response) => {
 });
 
 router.get('/link/callback', OAuthMiddleware('link'), async (req: Request, res: Response) => {
-    let { user } = req;
+    const cookie = req.cookies['x-refresh-token'];
 
-    if (!user) return res.status(401).json({
+    if (!cookie) return res.status(401).json({
         success: false,
         error: 'unauthorized',
     });
 
-    user = await UserModel.findById(user._id);
-
-    if (!user) return res.status(401).json({
-        success: false,
-        error: 'invalid session',
-    });
-
-    if (!user.emailVerified) return res.status(401).json({
-        success: false,
-        error: 'your email is not verified',
-    });
-
     try {
+        const refreshToken = await RefreshTokenModel.findOne({ token: cookie });
+
+        if (!refreshToken || Date.now() >= new Date(refreshToken.expires).getTime()) {
+            if (refreshToken) await refreshToken.remove();
+
+            res.status(401).json({
+                success: false,
+                error: 'invalid refresh token',
+            });
+
+            return;
+        }
+
+        const token: any = verify(refreshToken.token, process.env.REFRESH_TOKEN_SECRET);
+
+        const user = await UserModel.findOne({ _id: token._id })
+            .select('-__v -password');
+
+        if (!user) return res.status(401).json({
+            success: false,
+            error: 'invalid session',
+        });
+
+        if (!user.emailVerified) return res.status(401).json({
+            success: false,
+            error: 'your email is not verified',
+        });
+
         const { id, avatar, discriminator } = req.discord.user;
 
         await req.discord.addGuildMember(user);

@@ -10,6 +10,10 @@ import { formatFilesize } from '../../utils/FormatUtil';
 import { generateString } from '../../utils/GenerateUtil';
 import InviteModel from '../../models/InviteModel';
 import DomainModel from '../../models/DomainModel';
+import RefreshTokenModel from '../../models/RefreshTokenModel';
+import ChangeUsernameSchema from '../../schemas/ChangeUsernameSchema';
+import { hash, verify } from 'argon2';
+import ChangePasswordSchema from '../../schemas/ChangePasswordSchema';
 const router = Router();
 
 const filter = new Filter({
@@ -134,7 +138,9 @@ router.post('/disable', async (req: Request, res: Response) => {
             },
         });
 
-        res.clearCookie('jwt');
+        await RefreshTokenModel.deleteMany({ user: user._id });
+
+        res.clearCookie('x-refresh-token');
 
         res.status(200).json({
             success: true,
@@ -200,6 +206,104 @@ router.get('/created_invites', async (req: Request, res: Response) => {
         res.status(200).json({
             success: true,
             invites,
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.put('/change_username', ValidationMiddleware(ChangeUsernameSchema), async (req: Request, res: Response) => {
+    let { user } = req;
+    const { username, password } = req.body;
+
+    try {
+        user = await UserModel.findById(user._id);
+        const correctPassword = await verify(user.password, password);
+
+        if (!correctPassword) return res.status(401).json({
+            success: false,
+            error: 'invalid password',
+        });
+
+        const now = Date.now();
+        const difference = user.lastUsernameChange && now - user.lastUsernameChange.getTime();
+        const duration = 1209600000 - difference;
+
+        if (user.lastUsernameChange && duration > 0) {
+            const hours = Math.floor(duration / 1000 / 60 / 60);
+            const minutes = Math.floor((duration / 1000 / 60 / 60 - hours) * 60);
+            const days = Math.floor(hours / 24);
+            const timeLeft = `${days} days, ${hours} hours and ${minutes} minutes`;
+
+            res.status(400).json({
+                success: false,
+                error: `you cannot change your username for another ${timeLeft}`,
+            });
+
+            return;
+        }
+
+        if (username.toLowerCase() === user.username.toLowerCase()) return res.status(400).json({
+            success: false,
+            error: 'provide a new username',
+        });
+
+        const usernameTaken = await UserModel.findOne({ username: { $regex: new RegExp(username, 'i') } });
+
+        if (usernameTaken) return res.status(400).json({
+            success: false,
+            error: 'the provided username is already taken',
+        });
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            username,
+            lastUsernameChange: new Date(),
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'changed username successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.put('/change_password', ValidationMiddleware(ChangePasswordSchema), async (req: Request, res: Response) => {
+    let { user } = req;
+    const { newPassword, password } = req.body;
+
+    try {
+        user = await UserModel.findById(user._id);
+        const correctPassword = await verify(user.password, password);
+
+        if (!correctPassword) return res.status(401).json({
+            success: false,
+            error: 'invalid password',
+        });
+
+        if (await verify(user.password, newPassword)) return res.status(400).json({
+            succes: false,
+            error: 'choose a new password',
+        });
+
+        const hashed = await hash(newPassword);
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            password: hashed,
+        });
+
+        await RefreshTokenModel.deleteMany({ user: user._id });
+
+        res.status(200).json({
+            success: true,
+            message: 'changed password successfully',
         });
     } catch (err) {
         res.status(500).json({
