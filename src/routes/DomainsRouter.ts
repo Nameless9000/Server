@@ -88,7 +88,7 @@ router.post('/custom', AuthMiddleware, ValidationMiddleware(CustomDomainSchema),
     const { user } = req;
     const { name, wildcard, userOnly } = req.body;
 
-    if (!user.premium) return res.status(401).json({
+    if (!user.premium && !user.admin) return res.status(401).json({
         success: false,
         error: 'you do not have permission to add custom domains',
     });
