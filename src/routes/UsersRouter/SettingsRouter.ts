@@ -2,6 +2,8 @@ import { Request, Response, Router } from 'express';
 import ms from 'ms';
 import ValidationMiddleware from '../../middlewares/ValidationMiddleware';
 import DomainModel from '../../models/DomainModel';
+import FileModel from '../../models/FileModel';
+import InvisibleUrlModel from '../../models/InvisibleUrlModel';
 import UserModel from '../../models/UserModel';
 import EmbedSchema from '../../schemas/EmbedSchema';
 import PreferencesSchema from '../../schemas/PreferencesSchema';
@@ -127,7 +129,21 @@ router.put('/preferences', ValidationMiddleware(PreferencesSchema), async (req: 
 
                     if (entry[1] === true) {
                         const interval = setInterval(async () => {
-                            await wipeFiles(user);
+                            try {
+                                await wipeFiles(user);
+
+                                await FileModel.deleteMany({
+                                    'uploader.uuid': user._id,
+                                });
+
+                                await InvisibleUrlModel.deleteMany({
+                                    uploader: user._id,
+                                });
+
+                                await UserModel.findByIdAndUpdate(user._id, {
+                                    uploads: 0,
+                                });
+                            } catch (err) {}
                         }, user.settings.autoWipe.interval);
 
                         intervals.push({
@@ -217,7 +233,21 @@ router.put('/wipe_interval', ValidationMiddleware(WipeIntervalSchema), async (re
             }
 
             const interval = setInterval(async () => {
-                await wipeFiles(user);
+                try {
+                    await wipeFiles(user);
+
+                    await FileModel.deleteMany({
+                        'uploader.uuid': user._id,
+                    });
+
+                    await InvisibleUrlModel.deleteMany({
+                        uploader: user._id,
+                    });
+
+                    await UserModel.findByIdAndUpdate(user._id, {
+                        uploads: 0,
+                    });
+                } catch (err) {}
             }, value);
 
             intervals.push({
