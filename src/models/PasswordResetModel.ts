@@ -1,7 +1,7 @@
 import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
 
 @modelOptions({ options: { allowMixed: 0 } })
-export class ResetPassword {
+export class PasswordReset {
     /**
      * The reset code.
      */
@@ -21,4 +21,4 @@ export class ResetPassword {
     email: string;
 }
 
-export default getModelForClass(ResetPassword);
+export default getModelForClass(PasswordReset);

@@ -3,16 +3,22 @@ import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
 @modelOptions({ options: { allowMixed: 0 } })
 export class File {
     /**
-     * The file's name.
+     * The filename.
      */
     @prop()
     filename: string;
 
     /**
-     * The file's original name.
+     * The s3 key.
      */
     @prop()
-    originalname: string;
+    key: string;
+
+    /**
+     * The timestamp the file was uploaded at.
+     */
+    @prop()
+    timestamp: Date;
 
     /**
      * The file's mimetype.
@@ -27,16 +33,16 @@ export class File {
     size: string;
 
     /**
-     * The domain the file is being served on.
+     * The domain the user used.
      */
     @prop()
     domain: string;
 
     /**
-     * The date the file was uploaded.
+     * Whether or not the domain is user-only.
      */
     @prop()
-    dateUploaded: string;
+    userOnlyDomain: boolean;
 
     /**
      * The file's deletion key.
@@ -45,20 +51,16 @@ export class File {
     deletionKey: string;
 
     /**
-     * The file's display type.
-     */
-    @prop()
-    displayType: 'embed' | 'raw';
-
-    /**
-     * The file's embed settings, if enabled.
+     * The file's embed settings.
      */
     @prop()
     embed: {
+        enabled: boolean;
         color: string;
         title: string;
         description: string;
-        author: boolean;
+        author: string;
+        randomColor: boolean;
     }
 
     /**
@@ -68,13 +70,13 @@ export class File {
     showLink: boolean;
 
     /**
-     * The username of the user who uploaded the file.
+     * The user who uploaded the file.
      */
     @prop()
     uploader: {
+        uuid: string;
         username: string;
-        uid: string;
-    };
+    }
 }
 
 export default getModelForClass(File);

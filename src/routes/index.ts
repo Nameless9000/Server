@@ -1,15 +1,17 @@
 import FilesRouter from './FilesRouter';
 import InvitesRouter from './InvitesRouter';
-import UsersRouter from './UsersRouter';
 import DomainsRouter from './DomainsRouter';
 import AuthRouter from './AuthRouter';
-import RootRouter from './RootRouter';
+import UsersRouter from './UsersRouter';
+import BaseRouter from './BaseRouter';
+import ShortenerRouter from './ShortenerRouter';
 
 export {
     FilesRouter,
     InvitesRouter,
-    UsersRouter,
     DomainsRouter,
     AuthRouter,
-    RootRouter
+    UsersRouter,
+    BaseRouter,
+    ShortenerRouter
 };

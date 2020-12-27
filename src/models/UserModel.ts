@@ -1,16 +1,5 @@
 import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
 
-class Invite {
-    @prop()
-    code: string;
-
-    @prop()
-    dateCreated: string;
-
-    @prop()
-    useable: boolean;
-}
-
 @modelOptions({ options: { allowMixed: 0 } })
 export class User {
     /**
@@ -18,6 +7,12 @@ export class User {
      */
     @prop()
     _id: string;
+
+    /**
+     * The user's uid.
+     */
+    @prop()
+    uid: number;
 
     /**
      * The user's username.
@@ -30,6 +25,36 @@ export class User {
      */
     @prop()
     password: string;
+
+    /**
+     * The user's invite code.
+     */
+    @prop()
+    invite: string;
+
+    /**
+     * The user's upload key.
+     */
+    @prop()
+    key: string;
+
+    /**
+     * Whether or not the user is premium.
+     */
+    @prop()
+    premium: boolean;
+
+    /**
+     * The last time the key was regened.
+     */
+    @prop()
+    lastKeyRegen: Date;
+
+    /**
+     * The last time the user's username was changed.
+     */
+    @prop()
+    lastUsernameChange: Date;
 
     /**
      * The user's email.
@@ -50,18 +75,6 @@ export class User {
     emailVerificationKey: string;
 
     /**
-     * The user's invite code.
-     */
-    @prop()
-    invite: string;
-
-    /**
-     * The user's upload key.
-     */
-    @prop()
-    key: string;
-
-    /**
      * The user's discord id and avatar.
      */
     @prop()
@@ -69,6 +82,12 @@ export class User {
         id: string;
         avatar: string;
     };
+
+    /**
+     * The number of strikes the user has.
+     */
+    @prop()
+    strikes: number;
 
     /**
      * The user's blacklist status and reason.
@@ -98,12 +117,6 @@ export class User {
     invitedBy: string;
 
     /**
-     * All the invites the user has created.
-     */
-    @prop({ type: () => [Invite] })
-    createdInvites: Invite[];
-
-    /**
      * The users that the user invited.
      */
     @prop({ type: () => [String] })
@@ -113,7 +126,13 @@ export class User {
      * The date that the user registered.
      */
     @prop()
-    registrationDate: string;
+    registrationDate: Date;
+
+    /**
+     * The last time the user logged in.
+     */
+    @prop()
+    lastLogin: Date;
 
     /**
      * The user's testimonial.
@@ -122,34 +141,39 @@ export class User {
     testimonial: string;
 
     /**
-     * The user's roles.
+     * Whether or not the user is a admin.
      */
-    @prop({ type: () => [String] })
-    roles: string[];
+    @prop()
+    admin: boolean;
 
     /**
      * The user's settings, their preferences, their domain, etc.
      */
     @prop()
     settings: {
-        randomDomain: {
-            enabled: boolean;
-            domains: string[];
-        },
-        showLink: boolean;
-        invisibleUrl: boolean;
         domain: {
             name: string;
             subdomain: string;
         };
+        randomDomain: {
+            enabled: boolean;
+            domains: string[];
+        },
         embed: {
             enabled: boolean;
             color: string;
             title: string;
             description: string;
-            author: boolean;
+            author: string;
             randomColor: boolean;
         };
+        autoWipe: {
+            enabled: boolean;
+            interval: number;
+        };
+        showLink: boolean;
+        invisibleUrl: boolean;
+        longUrl: boolean;
     };
 }
 

@@ -15,10 +15,10 @@ export class InvisibleUrl {
     filename: string;
 
     /**
-     * The uid of th creator of the url.
+     * The uuid of the user who uploaded the file.
      */
     @prop()
-    uid: string;
+    uploader: string;
 }
 
 export default getModelForClass(InvisibleUrl);

@@ -1,2 +1,2 @@
-# Server
-Server for astral.cool
+# astral.cool
+The official server for astral.cool

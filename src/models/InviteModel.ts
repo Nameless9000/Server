@@ -12,19 +12,22 @@ export class Invite {
      * The user who created the invite.
      */
     @prop()
-    createdBy: string;
+    createdBy: {
+        username: string;
+        uuid: string;
+    };
 
     /**
      * The date the invite was created.
      */
     @prop()
-    dateCreated: string;
+    dateCreated: Date;
 
     /**
-     * Whether or not the invite is useable.
+     * The date it was redeemed on.
      */
     @prop()
-    useable: boolean;
+    dateRedeemed: Date;
 
     /**
      * The user who claimed the invite.
@@ -33,10 +36,16 @@ export class Invite {
     usedBy: string;
 
     /**
-     * WHether or not the invite was redeemed.
+     * Whether or not the invite has been redeemed.
      */
     @prop()
     redeemed: boolean;
+
+    /**
+     * Whether or not the invite is useable.
+     */
+    @prop()
+    useable: boolean;
 }
 
 export default getModelForClass(Invite);

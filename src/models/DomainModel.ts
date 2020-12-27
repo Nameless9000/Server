@@ -21,16 +21,22 @@ export class Domain {
     donated: boolean;
 
     /**
-     * Who donated the domain.
+     * The uuid of the user who donated the domain.
      */
     @prop()
     donatedBy: string;
 
     /**
+     * Whether or not the domain is only usable by the donator.
+     */
+    @prop()
+    userOnly: boolean;
+
+    /**
      * The date the domain was added.
      */
     @prop()
-    dateAdded: string;
+    dateAdded: Date;
 }
 
 export default getModelForClass(Domain);

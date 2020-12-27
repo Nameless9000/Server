@@ -1,6 +1,6 @@
 import { object, string } from 'joi';
 
 export default object({
-    reason: string()
-        .min(3),
+    url: string()
+        .required(),
 }).options({ abortEarly: false });

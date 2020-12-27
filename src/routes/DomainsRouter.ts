@@ -1,106 +1,154 @@
 import { Request, Response, Router } from 'express';
 import AdminMiddleware from '../middlewares/AdminMiddleware';
-import JoiMiddleware from '../middlewares/JoiMiddleware';
-import Domains from '../models/DomainModel';
+import AuthMiddleware from '../middlewares/AuthMiddleware';
+import ValidationMiddleware from '../middlewares/ValidationMiddleware';
+import DomainModel from '../models/DomainModel';
+import UserModel from '../models/UserModel';
+import CustomDomainSchema from '../schemas/CustomDomainSchema';
 import DomainSchema from '../schemas/DomainSchema';
-import { addDomain } from '../utils/CloudflareUtil';
-import { logDomain } from '../utils/LoggingUtil';
+import CloudflareUtil from '../utils/CloudflareUtil';
+import { logCustomDomain, logDomains } from '../utils/LoggingUtil';
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response) => {
-    await Domains.find({})
-        .then((domains) => {
-            res.status(200).json({
-                success: true,
-                domains,
-            });
+router.get('/', async (req: Request, res: Response) => {
+    const { user } = req;
+    try {
+        const count = await DomainModel.countDocuments();
+        let domains: any = await DomainModel.find({ userOnly: false })
+            .select('-__v -_id -donatedBy').lean();
+
+        if (user) domains = (await DomainModel.find({ userOnly: true, donatedBy: user._id }).select('-__v -_id -donatedBy').lean()).concat(domains);
+
+        for (let i = 0; i < domains.length; i++) {
+            const users = await UserModel.countDocuments({ 'settings.domain.name': domains[i].name });
+
+            domains[i].users = users;
+        }
+
+        res.status(200).json({
+            success: true,
+            count,
+            domains,
         });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
-router.get('/list', async (req: Request, res: Response) => {
-    await Domains.find({})
-        .then((domains) => {
-            const domainNames = [];
-            for (const domain of domains) {
-                domainNames.push(domain.name);
-            }
-            res.status(200).json(domainNames);
-        });
-});
+router.post('/', AdminMiddleware, ValidationMiddleware(DomainSchema), async (req: Request, res: Response) => {
+    const { user, body } = req;
 
-router.post('/', AdminMiddleware, JoiMiddleware(DomainSchema, 'body'), async (req: Request, res: Response) => {
-    const { name, wildcard, donated, donatedBy } = req.body;
-
-    if (await Domains.findOne({ name })) return res.status(400).json({
+    if (body.length <= 0) return res.status(400).json({
         success: false,
-        error: 'this domain already exists',
+        error: 'provide at least one domain object',
     });
 
-    await addDomain(name, wildcard)
-        .then(async () => {
-            await Domains.create({
+    try {
+        for (const field of body) {
+            let { name, wildcard, donated, donatedBy, userOnly } = field;
+            const domain = await DomainModel.findOne({ name });
+
+            if (domain) return res.status(400).json({
+                success: false,
+                error: `${name} already exists`,
+            });
+
+            if (user && userOnly && !donatedBy) donatedBy = user._id;
+
+            await CloudflareUtil.addDomain(name, wildcard);
+
+            await DomainModel.create({
                 name,
                 wildcard,
-                donated: donated ? donated : false,
-                donatedBy: donatedBy ? donatedBy : 'N/A',
-                dateAdded: new Date().toLocaleDateString(),
-            }).then(async (domain) => {
-                logDomain(domain);
-                res.status(200).json({
-                    success: true,
-                    message: 'added domain successfully',
-                });
-            }).catch((err) => {
-                res.status(500).json({
-                    success: false,
-                    error: err.message,
-                });
+                donated: donated || false,
+                donatedBy: donatedBy || null,
+                userOnly: userOnly || false,
+                dateAdded: new Date(),
             });
-        }).catch((err) => {
-            res.status(500).json({
-                success: false,
-                error: err.message,
-            });
+        }
+
+        await logDomains(req.body);
+
+        res.status(200).json({
+            success: true,
+            message: `${req.body.length > 1 ? `added ${req.body.length} domains` : 'added domain'} successfully`,
         });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
-router.delete('/:id', AdminMiddleware, async (req: Request, res: Response) => {
-    const { id } = req.params;
+router.post('/custom', AuthMiddleware, ValidationMiddleware(CustomDomainSchema), async (req: Request, res: Response) => {
+    const { user } = req;
+    const { name, wildcard, userOnly } = req.body;
 
-    if (!id) return res.status(500).json({
+    if (!user.premium && !user.admin) return res.status(401).json({
         success: false,
-        error: 'please provide a domain name',
+        error: 'you do not have permission to add custom domains',
     });
 
-    const domain = await Domains.findOne({ name: id });
+    try {
+        let domain: any = await DomainModel.findOne({ name });
+
+        if (domain) return res.status(400).json({
+            success: false,
+            error: `${name} already exists`,
+        });
+
+        await CloudflareUtil.addDomain(name, wildcard);
+
+        domain = await DomainModel.create({
+            name,
+            wildcard,
+            donated: true,
+            donatedBy: user._id,
+            userOnly: userOnly,
+            dateAdded: new Date(),
+        });
+
+        await logCustomDomain(domain);
+
+        res.status(200).json({
+            success: true,
+            message: 'added domain successfully',
+            domain,
+        });
+    } catch (err) {
+        console.log(err.response.data);
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+router.delete('/:name', AdminMiddleware, async (req: Request, res: Response) => {
+    const { name } = req.params;
+    const domain = await DomainModel.findOne({ name });
 
     if (!domain) return res.status(404).json({
         success: false,
         error: 'invalid domain',
     });
 
-    await domain.remove()
-        .then(() => {
-            res.status(202).json({
-                success: true,
-                message: 'deleted domain successfully',
-            });
-        }).catch((err) => {
-            res.status(500).json({
-                success: false,
-                error: err.message,
-            });
-        });
-});
-
-router.get('/count', async (req: Request, res: Response) => {
     try {
-        const total = await Domains.countDocuments();
-        const donated = await Domains.countDocuments({ donated: true });
+        await CloudflareUtil.deleteZone(domain.name);
+        await domain.remove();
+
+        await UserModel.updateMany({ 'settings.domain.name': domain.name }, {
+            'settings.domain.name': 'i.astral.cool',
+            'settings.domain.subdomain': null,
+        });
+
         res.status(200).json({
             success: true,
-            total,
-            donated,
+            message: 'deleted domain successfully',
         });
     } catch (err) {
         res.status(500).json({
@@ -111,14 +159,42 @@ router.get('/count', async (req: Request, res: Response) => {
 });
 
 router.get('/list', async (_req: Request, res: Response) => {
-    const domainsArray = [];
-    const domains = await Domains.find({});
+    try {
+        const domains = await DomainModel.find({})
+            .select('-__v -_id -wildcard -donated -donatedBy -dateAdded');
 
-    for (const domain of domains) {
-        domainsArray.push(domain.name);
+        res.status(200).json(domains.map((d) => d.name).join(', '));
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
     }
+});
 
-    res.status(200).json(domainsArray);
+router.get('/rank', async (_req: Request, res: Response) => {
+    try {
+        const domains = await DomainModel.find({});
+        const ranks = [];
+
+        for (const domain of domains) {
+            const users = await UserModel.countDocuments({ 'settings.domain.name': domain.name });
+            ranks.push({
+                domain: domain.name,
+                users,
+            });
+        }
+
+        const sorted = ranks.sort((a, b) => a.users - b.users).reverse();
+
+        res.status(200).json(sorted);
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
 export default router;
+

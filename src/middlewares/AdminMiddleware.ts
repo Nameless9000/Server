@@ -1,17 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
+import UserModel from '../models/UserModel';
 
 export default async (req: Request, res: Response, next: NextFunction) => {
+    let { user } = req;
     const key = req.headers.authorization as string;
 
-    if (!key) return res.status(400).json({
-        success: false,
-        error: 'provide an api-key',
-    });
+    if (user) user = await UserModel.findById(user._id);
 
-    if (key !== process.env.API_KEY) return res.status(401).json({
-        success: false,
-        error: 'unauthorized',
-    });
+    if (!key && !user || key !== process.env.API_KEY && (user && !user.admin))
+        return res.status(401).json({
+            success: false,
+            error: 'unauthorized',
+        });
 
     next();
 };

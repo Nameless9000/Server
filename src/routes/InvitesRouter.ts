@@ -1,140 +1,110 @@
 import { Request, Response, Router } from 'express';
-import { generateInvite } from '../utils/GenerateUtil';
 import AdminMiddleware from '../middlewares/AdminMiddleware';
-import Invites from '../models/InviteModel';
-import User from '../models/UserModel';
+import AuthMiddleware from '../middlewares/AuthMiddleware';
+import InviteModel from '../models/InviteModel';
+import UserModel from '../models/UserModel';
+import { generateInvite } from '../utils/GenerateUtil';
 const router = Router();
 
-router.post('/', async (req: Request, res: Response) => {
-    let { user } = req;
-    let useable = req.body.usable || true;
-    let inviter = 'Admin';
-    let amount = req.body.amount || 1;
-    const key = req.headers.authorization as string;
-    const invites = [];
+router.post('/', AuthMiddleware, async (req: Request, res: Response) => {
+    const { user } = req;
 
-    if (!user && key !== process.env.API_KEY) return res.status(401).json({
+    if (user.invites <= 0) return res.status(401).json({
         success: false,
-        error: 'unauthorized',
+        error: 'you do not have any invites',
     });
 
-    if (user && key !== process.env.API_KEY) {
-        user = await User.findOne({ _id: req.user._id });
+    const invite = generateInvite();
+    const dateCreated = new Date();
 
-        if (!user || user._id !== req.user._id) return res.status(401).json({
-            success: false,
-            error: 'unauthorized',
-        });
+    await InviteModel.create({
+        _id: invite,
+        createdBy: {
+            username: user.username,
+            uuid: user._id,
+        },
+        dateCreated,
+        dateRedeemed: null,
+        usedBy: null,
+        redeemed: false,
+        useable: true,
+    });
 
-        if (user.invites <= 0) return res.status(401).json({
-            success: false,
-            error: 'you do not have any invites',
-        });
-
-        amount = 1;
-        inviter = user.username;
-        useable = true;
-    }
-
-    for (let i = 0; i < amount; i++) {
-        const invite = generateInvite();
-        invites.push({
-            link: `https://astral.cool/?code=${invite}`,
-            code: invite,
-        });
-
-        await Invites.create({
-            _id: invite,
-            createdBy: inviter,
-            dateCreated: new Date().toLocaleDateString(),
-            useable,
-            usedBy: null,
-            redeemed: false,
-        });
-
-        if (user && key !== process.env.API_KEY) {
-            await User.updateOne({ _id: user._id }, {
-                $push: {
-                    createdInvites: {
-                        code: invite,
-                        dateCreated: new Date().toLocaleDateString(),
-                        useable: true,
-                    },
-                },
-                invites: user.invites - 1,
-            });
-        }
-    }
+    await UserModel.findByIdAndUpdate(user._id, {
+        invites: user.invites - 1,
+    });
 
     res.status(200).json({
         success: true,
-        invites,
+        link: `https://astral.gifts/${invite}`,
+        code: invite,
+        dateCreated,
     });
 });
 
-router.delete('/:code', async (req: Request, res: Response) => {
-    const code = req.params.code;
+router.get('/', AdminMiddleware, async (_req: Request, res: Response) => {
+    const count = await InviteModel.countDocuments();
 
-    if (!code) return res.status(400).json({
-        success: false,
-        error: 'provide a code',
-    });
+    const invites = await InviteModel.find({})
+        .select('-__v');
 
-    const invite = await Invites.findOne({ _id: code });
+    const redeemedInvites = await InviteModel.find({ redeemed: true })
+        .select('-__v');
 
-    if (!invite) res.status(404).json({
-        success: false,
-        error: 'invalid invite code',
-    });
+    const unusableInvites = await InviteModel.find({ useable: false })
+        .select('-__v');
 
-    if (!invite.useable) return res.status(400).json({
-        success: false,
-        error: 'this invite is not useable',
-    });
-
-    await Invites.updateOne({ _id: code }, {
-        useable: false,
-    }).then(async () => {
-        await User.updateOne({ 'username': invite.createdBy, 'createdInvites.code': invite._id }, {
-            'createdInvites.$.useable': false,
-        });
-
-        res.status(200).json({
-            success: true,
-            message: 'made invite unuseable',
-        });
-    }).catch((err) => {
-        res.status(500).json({
-            success: false,
-            error: err.message,
-        });
+    res.json({
+        success: true,
+        count,
+        invites,
+        redeemedInvites,
+        unusableInvites,
     });
 });
 
 router.get('/:code', AdminMiddleware, async (req: Request, res: Response) => {
-    const code = req.params.code;
+    const { code } = req.params;
 
-    if (!code) return res.status(400).json({
-        success: false,
-        error: 'provide a code',
-    });
-
-    let invite = await Invites.findOne({ _id: code });
+    const invite = await InviteModel.findById(code)
+        .select('-__v');
 
     if (!invite) return res.status(404).json({
         success: false,
-        error: 'invalid code',
+        error: 'invalid invite code',
     });
-
-    invite = invite.toObject();
-    invite['code'] = invite._id;
-    delete invite.__v;
-    delete invite._id;
 
     res.status(200).json({
         success: true,
         invite,
     });
+});
+
+router.delete('/:code', AdminMiddleware, async (req: Request, res: Response) => {
+    const { code } = req.params;
+
+    const invite = await InviteModel.findById(code);
+
+    if (!invite) return res.status(404).json({
+        success: false,
+        error: 'invalid invite code',
+    });
+
+    try {
+        await InviteModel.findByIdAndUpdate(invite._id, {
+            useable: false,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'deleted invite successfully',
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
 export default router;

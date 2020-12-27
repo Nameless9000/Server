@@ -1,13 +1,15 @@
-import { object, string } from 'joi';
+import { array, boolean, object, string } from 'joi';
 
-export default object({
+export default array().items(object({
     name: string()
         .required(),
 
-    wildcard: string()
+    wildcard: boolean()
         .required(),
 
-    donated: string(),
+    donated: boolean(),
 
     donatedBy: string(),
-}).options({ abortEarly: false });
+
+    userOnly: boolean(),
+}).options({ abortEarly: false }));

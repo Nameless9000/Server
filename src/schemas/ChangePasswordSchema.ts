@@ -1,6 +1,11 @@
 import { object, string } from 'joi';
 
 export default object({
-    code: string()
+    newPassword: string()
+        .min(5)
+        .max(60)
+        .required(),
+
+    password: string()
         .required(),
 }).options({ abortEarly: false });

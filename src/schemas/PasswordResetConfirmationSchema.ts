@@ -1,6 +1,7 @@
 import { object, string } from 'joi';
 
 export default object({
-    domain: string()
+    email: string()
+        .email()
         .required(),
 }).options({ abortEarly: false });

@@ -2,13 +2,15 @@ import { NextFunction, Request, Response } from 'express';
 import { verify } from 'jsonwebtoken';
 
 export default (req: Request, _res: Response, next: NextFunction) => {
-    const jwt = req.cookies.jwt;
+    // terrible, I know
+    const accessToken = req.headers['x-access-token'] && (req.headers['x-access-token'] as string).split(' ')[1];
 
-    if (!jwt) return next();
+    if (!accessToken) return next();
 
     try {
-        const token: any = verify(jwt, process.env.JWT_SECRET);
+        const token: any = verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
         req.user = token;
+
         next();
     } catch (err) {
         next();

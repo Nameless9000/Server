@@ -1,8 +1,6 @@
-import { object, string } from 'joi';
+import { number, object } from 'joi';
 
 export default object({
-    email: string()
-        .email()
+    value: number()
         .required(),
 }).options({ abortEarly: false });
-
