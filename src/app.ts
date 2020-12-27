@@ -19,6 +19,8 @@ import SessionMiddleware from './middlewares/SessionMiddleware';
 import UserModel from './models/UserModel';
 import ms from 'ms';
 import CounterModel from './models/CounterModel';
+import FileModel from './models/FileModel';
+import InvisibleUrlModel from './models/InvisibleUrlModel';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -115,7 +117,21 @@ try {
                 if (findInterval) clearInterval(findInterval.id);
 
                 const id = setInterval(async () => {
-                    await wipeFiles(user);
+                    try {
+                        await wipeFiles(user);
+
+                        await FileModel.deleteMany({
+                            'uploader.uuid': user._id,
+                        });
+
+                        await InvisibleUrlModel.deleteMany({
+                            uploader: user._id,
+                        });
+
+                        await UserModel.findByIdAndUpdate(user._id, {
+                            uploads: 0,
+                        });
+                    } catch (err) {}
                 }, interval);
 
                 intervals.push({
