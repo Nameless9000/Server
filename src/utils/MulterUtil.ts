@@ -22,9 +22,14 @@ const upload: Multer = multer({
             const { longUrl, domain } = req.user.settings;
             const document = await DomainModel.findOne({ name: domain.name });
             const filename = (longUrl ? generateString(17): generateString(7)) + extname(file.originalname);
-            file.filename = filename;
 
-            if (document.userOnly) key = document.name;
+            if (document.userOnly) {
+                file.userOnlyDomain = true;
+                key = document.name;
+            }
+
+            file.filename = filename;
+            file.key = `${key}/${filename}`;
 
             cb(null, `${key}/${filename}`);
         },

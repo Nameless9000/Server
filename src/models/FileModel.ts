@@ -9,6 +9,12 @@ export class File {
     filename: string;
 
     /**
+     * The s3 key.
+     */
+    @prop()
+    key: string;
+
+    /**
      * The timestamp the file was uploaded at.
      */
     @prop()
@@ -31,6 +37,12 @@ export class File {
      */
     @prop()
     domain: string;
+
+    /**
+     * Whether or not the domain is user-only.
+     */
+    @prop()
+    userOnlyDomain: boolean;
 
     /**
      * The file's deletion key.

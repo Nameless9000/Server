@@ -27,31 +27,44 @@ function formatFilesize(size: number): string {
 function formatEmbed(embed: EmbedInterface, user: User, file: File): EmbedInterface {
     for (const field of ['title', 'description', 'author']) {
         if (embed[field]) {
-            embed[field] = embed[field]
-                .replace('{size}', file.size)
-                .replace('{username}', user.username)
-                .replace('{filename}', file.filename)
-                .replace('{uploads}', user.uploads)
-                .replace('{date}', file.timestamp.toLocaleDateString())
-                .replace('{time}', file.timestamp.toLocaleTimeString())
-                .replace('{timestamp}', file.timestamp.toLocaleString())
-                .replace('{domain}', file.domain);
+            if (embed[field] === 'default') {
+                switch (field) {
+                    case 'title':
+                        embed[field] = file.filename;
+                        break;
+                    case 'description':
+                        embed[field] = `Uploaded at ${new Date(file.timestamp).toLocaleString()} by ${user.username}`;
+                        break;
+                    case 'author':
+                        embed[field] = user.username;
+                }
+            } else {
+                embed[field] = embed[field]
+                    .replace('{size}', file.size)
+                    .replace('{username}', user.username)
+                    .replace('{filename}', file.filename)
+                    .replace('{uploads}', user.uploads)
+                    .replace('{date}', file.timestamp.toLocaleDateString())
+                    .replace('{time}', file.timestamp.toLocaleTimeString())
+                    .replace('{timestamp}', file.timestamp.toLocaleString())
+                    .replace('{domain}', file.domain);
 
-            const TIMEZONE_REGEX = /{(time|timestamp):([^}]+)}/i;
-            let match = embed[field].match(TIMEZONE_REGEX);
+                const TIMEZONE_REGEX = /{(time|timestamp):([^}]+)}/i;
+                let match = embed[field].match(TIMEZONE_REGEX);
 
-            while (match) {
-                try {
-                    const formatted = match[1] === 'time' ? file.timestamp.toLocaleTimeString('en-US', {
-                        timeZone: match[2],
-                    }) : file.timestamp.toLocaleString('en-US', {
-                        timeZone: match[2],
-                    });
+                while (match) {
+                    try {
+                        const formatted = match[1] === 'time' ? file.timestamp.toLocaleTimeString('en-US', {
+                            timeZone: match[2],
+                        }) : file.timestamp.toLocaleString('en-US', {
+                            timeZone: match[2],
+                        });
 
-                    embed[field] = embed[field].replace(match[0], formatted);
-                    match = embed[field].match(TIMEZONE_REGEX);
-                } catch (err) {
-                    break;
+                        embed[field] = embed[field].replace(match[0], formatted);
+                        match = embed[field].match(TIMEZONE_REGEX);
+                    } catch (err) {
+                        break;
+                    }
                 }
             }
         }

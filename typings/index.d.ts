@@ -9,4 +9,11 @@ declare global {
             discord: OAuth;
         }
     }
+
+    namespace Express.Multer {
+        export interface File {
+            key: string;
+            userOnlyDomain: boolean;
+        }
+    }
 }

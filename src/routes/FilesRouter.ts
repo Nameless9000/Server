@@ -65,9 +65,11 @@ router.post('/', UploadMiddleware, upload.single('file'), async (req: Request, r
 
     file = new FileModel({
         filename: file.filename,
+        key: file.key,
         timestamp,
         mimetype: file.mimetype,
         domain: req.headers.domain ? req.headers.domain : user.settings.domain.name,
+        userOnlyDomain: file.userOnlyDomain ? file.userOnlyDomain : false,
         size: formatFilesize(file.size),
         deletionKey,
         embed,
