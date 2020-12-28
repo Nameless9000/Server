@@ -246,6 +246,7 @@ router.get('/config', ValidationMiddleware(ConfigSchema, 'query'), async (req: R
         },
         URL: '$json:imageUrl$',
         DeletionURL: '$json:deletionUrl$',
+        ErrorMessage: '$json:error$',
     };
 
     res.set('Content-Disposition', 'attachment; filename=config.sxcu');
