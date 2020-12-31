@@ -6,7 +6,8 @@ import {
     AuthRouter,
     BaseRouter,
     UsersRouter,
-    ShortenerRouter
+    ShortenerRouter,
+    AdminRouter
 } from './routes';
 import { connect } from 'mongoose';
 import { transporter } from './utils/MailUtil';
@@ -82,6 +83,7 @@ try {
     app.use('/auth', AuthRouter);
     app.use('/users', UsersRouter);
     app.use('/shortener', ShortenerRouter);
+    app.use('/admin', AdminRouter);
 
     app.use((_req, res) => {
         res.status(404).json({

@@ -5,6 +5,7 @@ import AuthRouter from './AuthRouter';
 import UsersRouter from './UsersRouter';
 import BaseRouter from './BaseRouter';
 import ShortenerRouter from './ShortenerRouter';
+import AdminRouter from './AdminRouter';
 
 export {
     FilesRouter,
@@ -13,5 +14,6 @@ export {
     AuthRouter,
     UsersRouter,
     BaseRouter,
-    ShortenerRouter
+    ShortenerRouter,
+    AdminRouter
 };
