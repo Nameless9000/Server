@@ -43,15 +43,15 @@ router.get('/:id', AdminMiddleware, async (req: Request, res: Response) => {
 });
 
 router.get('/profile/:id', AuthMiddleware, async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id);
-    const user = await UserModel.findOne({ uid: id });
-
-    if (!user) return res.status(404).json({
-        success: false,
-        error: 'invalid user',
-    });
-
     try {
+        const id = parseInt(req.params.id);
+        const user = await UserModel.findOne({ uid: id });
+
+        if (!user) return res.status(404).json({
+            success: false,
+            error: 'invalid user',
+        });
+
         res.status(200).json({
             success: true,
             user: {
@@ -60,7 +60,7 @@ router.get('/profile/:id', AuthMiddleware, async (req: Request, res: Response) =
                 username: user.username,
                 registrationDate: user.registrationDate,
                 role: user.admin ? 'Admin' : (user.premium ? 'Premium' : 'Whitelisted'),
-                blacklisted: user.blacklisted.status,
+                uploads: user.uploads,
                 invitedBy: user.invitedBy,
                 avatar: user.discord.avatar,
             },
