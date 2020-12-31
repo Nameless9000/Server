@@ -9,7 +9,7 @@ const router = Router();
 router.post('/', AuthMiddleware, async (req: Request, res: Response) => {
     const { user } = req;
 
-    if (user.invites <= 0) return res.status(401).json({
+    if (user.invites <= 0 && !user.admin) return res.status(401).json({
         success: false,
         error: 'you do not have any invites',
     });
@@ -30,7 +30,7 @@ router.post('/', AuthMiddleware, async (req: Request, res: Response) => {
         useable: true,
     });
 
-    await UserModel.findByIdAndUpdate(user._id, {
+    if (!user.admin) await UserModel.findByIdAndUpdate(user._id, {
         invites: user.invites - 1,
     });
 
