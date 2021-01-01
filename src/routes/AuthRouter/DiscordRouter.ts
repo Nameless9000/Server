@@ -27,10 +27,9 @@ router.get('/login/callback', OAuthMiddleware(), async (req: Request, res: Respo
         if (passwordReset) await passwordReset.remove();
 
         const update = {
-            lastLogin: new Date(),
+            'lastLogin': new Date(),
+            'discord.avatar': `https://cdn.discordapp.com/${avatar ? `avatars/${id}/${avatar}` : `embed/avatars/${discriminator % 5}`}.png`,
         };
-
-        if (user.discord.avatar !== avatar) update['discord.avatar'] = `https://cdn.discordapp.com/${avatar ? `avatars/${id}/${avatar}` : `embed/avatars/${discriminator % 5}`}.png`,
 
         await UserModel.findByIdAndUpdate(user._id, update);
         const refreshToken = sign({ _id: user._id }, process.env.REFRESH_TOKEN_SECRET);
