@@ -145,6 +145,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
             invite,
             key: `astral_${generateString(30)}`,
             premium: false,
+            lastDomainAddition: null,
             lastKeyRegen: null,
             lastUsernameChange: null,
             email,

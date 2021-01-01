@@ -45,6 +45,12 @@ export class User {
     premium: boolean;
 
     /**
+     * The last time the user requested to add a custom domain.
+     */
+    @prop()
+    lastDomainAddition: Date;
+
+    /**
      * The last time the key was regened.
      */
     @prop()

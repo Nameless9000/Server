@@ -94,7 +94,24 @@ router.post('/custom', AuthMiddleware, ValidationMiddleware(CustomDomainSchema),
     });
 
     try {
-        let domain: any = await DomainModel.findOne({ name });
+        const now = Date.now();
+        const difference = user.lastDomainAddition && now - user.lastDomainAddition.getTime();
+        const duration = 43200000 - difference;
+
+        if (user.lastDomainAddition && duration > 0) {
+            const hours = Math.floor(duration / 1000 / 60 / 60);
+            const minutes = Math.floor((duration / 1000 / 60 / 60 - hours) * 60);
+            const timeLeft = `${hours} hours and ${minutes} minutes`;
+
+            res.status(400).json({
+                success: false,
+                error: `you cannot add a domain for another ${timeLeft}`,
+            });
+
+            return;
+        }
+
+        let domain: any = await DomainModel.findOne({ name: { $regex: new RegExp(name, 'i') } });
 
         if (domain) return res.status(400).json({
             success: false,
@@ -113,6 +130,10 @@ router.post('/custom', AuthMiddleware, ValidationMiddleware(CustomDomainSchema),
         });
 
         await logCustomDomain(domain);
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            lastDomainAddition: new Date(),
+        });
 
         res.status(200).json({
             success: true,
