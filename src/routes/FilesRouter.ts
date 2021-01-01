@@ -164,6 +164,11 @@ router.delete('/:id', AuthMiddleware, async (req: Request, res: Response) => {
 
     const domain = await DomainModel.findOne({ name: file.domain });
 
+    if (file.userOnlyDomain && !domain) return res.status(400).json({
+        success: false,
+        error: 'invalid domain',
+    });
+
     const params = {
         Bucket: process.env.S3_BUCKET,
         Key: `${user._id || file.uploader.uuid}/${file.filename}`,
