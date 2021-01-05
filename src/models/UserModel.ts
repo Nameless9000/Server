@@ -77,6 +77,12 @@ export class User {
     lastUsernameChange: Date;
 
     /**
+     * The last time the user requested a file archive.
+     */
+    @prop()
+    lastFileArchive: Date;
+
+    /**
      * The user's email.
      */
     @prop()

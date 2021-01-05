@@ -14,6 +14,7 @@ import RefreshTokenModel from '../../models/RefreshTokenModel';
 import ChangeUsernameSchema from '../../schemas/ChangeUsernameSchema';
 import { hash, verify } from 'argon2';
 import ChangePasswordSchema from '../../schemas/ChangePasswordSchema';
+import { extname } from 'path';
 const router = Router();
 
 const filter = new Filter({
@@ -84,14 +85,16 @@ router.get('/images', async (req: Request, res: Response) => {
         let storageUsed = 0;
 
         for (const object of objects.Contents) {
-            storageUsed += object.Size;
+            if (extname(object.Key) !== '.zip') {
+                storageUsed += object.Size;
 
-            images.push({
-                link: `https://cdn.astral.cool/${user._id}/${object.Key.split('/')[1]}`,
-                dateUploaded: object.LastModified,
-                filename: object.Key.split('/')[1],
-                size: formatFilesize(object.Size),
-            });
+                images.push({
+                    link: `https://cdn.astral.cool/${user._id}/${object.Key.split('/')[1]}`,
+                    dateUploaded: object.LastModified,
+                    filename: object.Key.split('/')[1],
+                    size: formatFilesize(object.Size),
+                });
+            }
         }
 
         if (domains.length !== 0) for (const domain of domains) {

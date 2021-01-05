@@ -1,3 +1,4 @@
+import Mail from 'nodemailer/lib/mailer';
 import { createTransport } from 'nodemailer';
 import { User } from '../models/UserModel';
 
@@ -51,7 +52,7 @@ async function sendVerificationEmail(user: User) {
  */
 async function sendPasswordReset(user: User, key: string) {
     const html = `<h1>Password Reset</h1>
-    Hello <strong>${user.username}</strong>, you have requested to reset your password, if you did not request this change, please contact an Admin.<br>
+    Hello <strong>${user.username}</strong>, you have requested to reset your password, if you did not request this change, please contact an Administrator.<br>
     Please click on the link below to continue the reset process, this link will expire in <strong>10 minutes</strong>.<br>
     <a href="${process.env.FRONTEND_URL}/resetpassword?key=${key}">Reset your password</a>`;
 
@@ -65,9 +66,36 @@ async function sendPasswordReset(user: User, key: string) {
     await transporter.sendMail(email);
 }
 
+/**
+ * Send a archive of all of the user's files.
+ * @param {string} user The user to send the files to.
+ * @param {any} archive The archive.
+ */
+async function sendFileArchive(user: User, archive: any) {
+    const html = `<h1>File Archive</h1>
+    Hello <strong>${user.username}</strong>, you have requested to recieve an archive of all of your files, if you did not request this, please contact an Administrator.`;
+
+    const email: Mail.Options = {
+        from: emailAddress,
+        to: user.email,
+        subject: 'File Archive',
+        html,
+        attachments: [
+            {
+                filename: 'archive.zip',
+                content: archive,
+                contentType: 'application/zip',
+            },
+        ],
+    };
+
+    await transporter.sendMail(email);
+}
+
 export {
     transporter,
     sendVerificationEmail,
-    sendPasswordReset
+    sendPasswordReset,
+    sendFileArchive
 };
 

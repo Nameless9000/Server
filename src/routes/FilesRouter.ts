@@ -15,6 +15,7 @@ import ConfigSchema from '../schemas/ConfigSchema';
 import AuthMiddleware from '../middlewares/AuthMiddleware';
 import Archiver from 'archiver';
 import { extname } from 'path';
+import { sendFileArchive } from '../utils/MailUtil';
 const router = Router();
 
 router.get('/', async (_req: Request, res: Response) => {
@@ -255,6 +256,7 @@ function writeStream(key: string) {
         Bucket: process.env.S3_BUCKET,
         Key: key,
         Body: passThrough,
+        ACL: 'public-read',
     };
 
     return {
@@ -265,11 +267,35 @@ function writeStream(key: string) {
     };
 }
 
-router.get('/archive', async (req: Request, res: Response) => {
+router.get('/archive', AuthMiddleware, async (req: Request, res: Response) => {
+    const { user } = req;
+
+    if (user.uploads <= 0) return res.status(400).json({
+        success: false,
+        error: 'you haven\'t uploaded any files',
+    });
+
     try {
+        const now = Date.now();
+        const difference = user.lastFileArchive && now - user.lastFileArchive.getTime();
+        const duration = 43200000 - difference;
+
+        if (user.lastFileArchive && duration > 0) {
+            const hours = Math.floor(duration / 1000 / 60 / 60);
+            const minutes = Math.floor((duration / 1000 / 60 / 60 - hours) * 60);
+            const timeLeft = `${hours} hours and ${minutes} minutes`;
+
+            res.status(400).json({
+                success: false,
+                error: `you cannot create a file archive for another ${timeLeft}`,
+            });
+
+            return;
+        }
+
         const params = {
             Bucket: process.env.S3_BUCKET,
-            Prefix: 'testing/',
+            Prefix: `${user._id}/`,
         };
 
         const objects = await s3.listObjectsV2(params).promise();
@@ -280,7 +306,7 @@ router.get('/archive', async (req: Request, res: Response) => {
             };
         });
 
-        const { passThrough, uploaded } = writeStream(`testing/${generateString(5)}.zip`);
+        const { passThrough, uploaded } = writeStream(`${user._id}/${generateString(5)}.zip`);
 
         await new Promise((resolve, reject) => {
             const archive = Archiver('zip');
@@ -313,9 +339,19 @@ router.get('/archive', async (req: Request, res: Response) => {
         });
 
         const { Key } = await uploaded.promise();
+        const Location = `https://cdn.astral.cool/${Key}`;
 
-        res.setHeader('Content-Type', 'application/zip');
-        s3.getObject({ Bucket: process.env.S3_BUCKET, Key }).createReadStream().pipe(res);
+        await sendFileArchive(user, s3.getObject({ Bucket: process.env.S3_BUCKET, Key }).createReadStream());
+
+        await UserModel.findByIdAndUpdate(user._id, {
+            lastFileArchive: new Date(),
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'sent archive to your email successfully',
+            directLink: Location,
+        });
     } catch (err) {
         res.status(500).json({
             success: false,

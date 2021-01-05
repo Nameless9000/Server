@@ -148,6 +148,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
             lastDomainAddition: null,
             lastKeyRegen: null,
             lastUsernameChange: null,
+            lastFileArchive: null,
             email,
             emailVerified: false,
             emailVerificationKey: generateString(30),
