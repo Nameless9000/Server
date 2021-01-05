@@ -309,7 +309,7 @@ router.get('/archive', async (req: Request, res: Response) => {
 
             archive.finalize();
         }).catch((err) => {
-            console.log(err);
+            throw new Error(err);
         });
 
         const { Key } = await uploaded.promise();
