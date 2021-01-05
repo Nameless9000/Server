@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@typegoose/typegoose": "^7.4.2",
+    "@types/archiver": "^5.1.0",
     "@types/aws-sdk": "^2.7.0",
     "@types/bad-words": "^3.0.0",
     "@types/cookie-parser": "^1.4.2",
@@ -39,6 +40,7 @@
     "@types/multer": "^1.4.4",
     "@types/multer-s3": "^2.7.8",
     "@types/nodemailer": "^6.4.0",
+    "archiver": "^5.1.0",
     "argon2": "^0.27.0",
     "aws-sdk": "^2.799.0",
     "axios": "^0.21.0",
@@ -56,6 +58,7 @@
     "nodemailer": "^6.4.16",
     "path": "^0.12.7",
     "querystring": "^0.2.0",
+    "stream": "0.0.2",
     "uuid": "^8.3.1"
   }
 }

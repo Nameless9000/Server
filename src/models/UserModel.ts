@@ -1,5 +1,19 @@
 import { prop, getModelForClass, modelOptions } from '@typegoose/typegoose';
 
+class Notification {
+    /**
+     * The notification id.
+     */
+    @prop()
+    id: string;
+
+    /**
+     * The notification message.
+     */
+    @prop()
+    message: string;
+}
+
 @modelOptions({ options: { allowMixed: 0 } })
 export class User {
     /**
@@ -151,6 +165,9 @@ export class User {
      */
     @prop()
     admin: boolean;
+
+    @prop({ type: () => [Notification] })
+    notifications: Array<Notification>;
 
     /**
      * The user's settings, their preferences, their domain, etc.

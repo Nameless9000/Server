@@ -168,6 +168,7 @@ router.post('/register', ValidationMiddleware(RegisterSchema), async (req: Reque
             lastLogin: null,
             testimonial: null,
             admin: false,
+            notifications: [],
             settings: {
                 domain: {
                     name: 'i.astral.cool',

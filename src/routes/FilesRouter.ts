@@ -4,6 +4,7 @@ import { s3, wipeFiles } from '../utils/S3Util';
 import { formatEmbed, formatFilesize } from '../utils/FormatUtil';
 import { generateString, generateInvisibleId } from '../utils/GenerateUtil';
 import { DocumentType } from '@typegoose/typegoose';
+import { PassThrough } from 'stream';
 import UploadMiddleware from '../middlewares/UploadMiddleware';
 import FileModel, { File } from '../models/FileModel';
 import UserModel, { User } from '../models/UserModel';
@@ -12,6 +13,8 @@ import ValidationMiddleware from '../middlewares/ValidationMiddleware';
 import DeletionSchema from '../schemas/DeletionSchema';
 import ConfigSchema from '../schemas/ConfigSchema';
 import AuthMiddleware from '../middlewares/AuthMiddleware';
+import Archiver from 'archiver';
+import { extname } from 'path';
 const router = Router();
 
 router.get('/', async (_req: Request, res: Response) => {
@@ -243,6 +246,82 @@ router.get('/config', ValidationMiddleware(ConfigSchema, 'query'), async (req: R
 
     res.set('Content-Disposition', 'attachment; filename=config.sxcu');
     res.send(Buffer.from(JSON.stringify(config, null, 2), 'utf8'));
+});
+
+function writeStream(key: string) {
+    const passThrough = new PassThrough();
+
+    const params = {
+        Bucket: process.env.S3_BUCKET,
+        Key: key,
+        Body: passThrough,
+    };
+
+    return {
+        passThrough,
+        uploaded: s3.upload(params, (err) => {
+            throw new Error(err);
+        }),
+    };
+}
+
+router.get('/archive', async (req: Request, res: Response) => {
+    try {
+        const params = {
+            Bucket: process.env.S3_BUCKET,
+            Prefix: 'testing/',
+        };
+
+        const objects = await s3.listObjectsV2(params).promise();
+        const streams = objects.Contents.map((object) => {
+            return {
+                stream: s3.getObject({ Bucket: process.env.S3_BUCKET, Key: object.Key }).createReadStream(),
+                object: object,
+            };
+        });
+
+        const { passThrough, uploaded } = writeStream(`testing/${generateString(5)}.zip`);
+
+        await new Promise((resolve, reject) => {
+            const archive = Archiver('zip');
+
+            archive.on('error', (err) => {
+                throw new Error(err.message);
+            });
+
+            passThrough.on('close', resolve);
+            passThrough.on('end', resolve);
+            passThrough.on('error', reject);
+
+            archive.pipe(passThrough);
+
+            let i = 1;
+
+            streams.forEach((ctx) => {
+                if (!ctx.object.Key.endsWith('/') && extname(ctx.object.Key) !== '.zip') {
+                    archive.append(ctx.stream, {
+                        name: i.toString() + extname(ctx.object.Key),
+                    });
+
+                    i++;
+                }
+            });
+
+            archive.finalize();
+        }).catch((err) => {
+            console.log(err);
+        });
+
+        const { Key } = await uploaded.promise();
+
+        res.setHeader('Content-Type', 'application/zip');
+        s3.getObject({ Bucket: process.env.S3_BUCKET, Key }).createReadStream().pipe(res);
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
 });
 
 export default router;
