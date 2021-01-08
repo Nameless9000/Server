@@ -2,8 +2,6 @@ import { Request, Response, Router } from 'express';
 import { s3 } from '../../utils/S3Util';
 import AuthMiddleware from '../../middlewares/AuthMiddleware';
 import ValidationMiddleware from '../../middlewares/ValidationMiddleware';
-import TestimonialSchema from '../../schemas/TestimonialSchema';
-import Filter from 'bad-words';
 import UserModel from '../../models/UserModel';
 import SettingsRouter from './SettingsRouter';
 import { formatFilesize } from '../../utils/FormatUtil';
@@ -17,20 +15,6 @@ import ChangePasswordSchema from '../../schemas/ChangePasswordSchema';
 import { extname } from 'path';
 const router = Router();
 
-const filter = new Filter({
-    list: [
-        'payshost',
-        'pxl.blue',
-        'prophecy.photos',
-        'pays.host',
-        'pxlblue',
-        'prophecy',
-        'pxl',
-        'pays',
-        'owo',
-    ],
-});
-
 router.use(AuthMiddleware);
 router.use('/settings', SettingsRouter);
 
@@ -38,34 +22,6 @@ router.get('/', async (req: Request, res: Response) => {
     const { user } = req;
 
     res.status(200).json(user);
-});
-
-router.put('/testimonial', ValidationMiddleware(TestimonialSchema), async (req: Request, res: Response) => {
-    const { user } = req;
-    const { testimonial }: {
-        testimonial: string;
-    } = req.body;
-
-    if (filter.isProfane(testimonial)) return res.status(400).json({
-        success: false,
-        error: 'your testimonial contains a blacklisted word',
-    });
-
-    try {
-        await UserModel.findByIdAndUpdate(user._id, {
-            testimonial,
-        });
-
-        res.status(200).json({
-            success: true,
-            message: 'updated testimonial successfully',
-        });
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            error: err.message,
-        });
-    }
 });
 
 router.get('/images', async (req: Request, res: Response) => {

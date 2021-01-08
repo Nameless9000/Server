@@ -155,6 +155,9 @@ router.get('/config', ValidationMiddleware(ConfigSchema, 'query'), async (req: R
         },
         Body: 'JSON',
         Data: '{"url":"$input$"}',
+        URL: '$json:shortenedUrl$',
+        DeletionURL: '$json:deletionUrl$',
+        ErrorMessage: '$json:error$',
     };
 
     res.set('Content-Disposition', 'attachment; filename=shortener.sxcu');
